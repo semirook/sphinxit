@@ -588,6 +588,9 @@ class SXQLSnippets(object):
     def _clean_attr(self, attr):
         if not isinstance(attr, basestring):
             raise SphinxQLSyntaxException(self._not_string_validator_exception_msg.format(attr))
+
+        attr = re.sub("'", '', attr)  # escaping single quote doesn`t work
+
         return attr
 
     def _clean_data(self, data):
@@ -595,7 +598,7 @@ class SXQLSnippets(object):
             or False in map(lambda d: isinstance(d, basestring), data)):
             raise SphinxQLSyntaxException(self._data_validator_exception_msg.format(data))
 
-        return data
+        return map(lambda x: re.sub("'", '', x), data)  # escaping single quote doesn`t work
 
     def _clean_options(self, options):
         params_chain = []

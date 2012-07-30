@@ -412,3 +412,7 @@ class TestSXQLSnippets(TestCase):
         wrong_value_snippet_options = {'html_strip_mode': 'wrong_mode'}
         with self.assertRaises(SphinxQLSyntaxException):
             SXQLSnippets('index', data=['only good news'], query='Good News', options=wrong_value_snippet_options).lex
+
+    def test_quotes_escaping(self):
+        sxql_inst_1 = SXQLSnippets('index', data=["only l'amour", "l'oreal"], query="L'amour")
+        self.assertEqual(sxql_inst_1.lex, u"CALL SNIPPETS(('only lamour', 'loreal'), 'index', 'Lamour')")
