@@ -167,8 +167,8 @@ class TestSXQLFilter(TestCase):
         where_def_8 = SXQLFilter()(e__eq=15)
         self.assertEqual(where_def_8.lex, u'e=15')
 
-        where_def_9 = SXQLFilter()(id__in=['2', '4'])
-        self.assertEqual(where_def_9.lex, u'id IN (2,4)')
+        where_def_9 = SXQLFilter()(id__in=['2', '4', 5])
+        self.assertEqual(where_def_9.lex, u'id IN (2,4,5)')
 
         more_where_defs = SXQLFilter()(id__eq=1, att1__lt=1, att2__between=[1, 5])
         results = ('id=1 AND att2 BETWEEN 1 AND 5 AND att1<1',
@@ -188,10 +188,7 @@ class TestSXQLFilter(TestCase):
         self.assertRaises(SphinxQLSyntaxException, where_def_2, id__gte=(16, 32))
 
         where_def_3 = SXQLFilter()
-        self.assertRaises(SphinxQLSyntaxException, where_def_3, id__in=(16, 32, 45))
-
-        where_def_4 = SXQLFilter()
-        self.assertRaises(SphinxQLSyntaxException, where_def_4, title__eq='Error')
+        self.assertRaises(SphinxQLSyntaxException, where_def_3, title__eq='Error')
 
 
 class TestSXQLMatch(TestCase):

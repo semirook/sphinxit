@@ -143,9 +143,6 @@ class CommonSXQLWhereMixin(object):
                     raise SphinxQLSyntaxException(self._attr_value_is_range_msg)
 
                 if ending in ('__between', '__in'):
-                    if len(v_attr) != 2:
-                        raise SphinxQLSyntaxException(self._not_valid_range_msg.format(v_attr))
-
                     if not isinstance(v_attr, collections.Iterable):
                         raise SphinxQLSyntaxException(self._not_iterable_values_msg.format(v_attr))
 
@@ -157,6 +154,8 @@ class CommonSXQLWhereMixin(object):
                             raise SphinxQLSyntaxException(self._not_integer_values_msg.format(v_attr))
 
                 if ending == '__between':
+                    if len(v_attr) != 2:
+                        raise SphinxQLSyntaxException(self._not_valid_range_msg.format(v_attr))
                     f_v, s_v = v_attr
                     return attr_to_str_map[ending].format(a=a, f_v=f_v, s_v=s_v)
 
