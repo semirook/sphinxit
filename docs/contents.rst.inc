@@ -2,7 +2,7 @@ User's Guide
 ------------
 
 Less theory, more practice. Usually we have no time and desire to read lengthy docs,
-so this part is more or less like `How To`. If you prefer more detailed and strict docs, 
+so this part is more or less like "How To". If you prefer more detailed and strict docs, 
 Sphinxit has documented :ref:`API`. Also, you always can explore tests and sources, 
 it`s quite useful for understanding internal project architecture.
 
@@ -26,7 +26,7 @@ it`s quite useful for understanding internal project architecture.
 Development
 -----------
 
-You can grab latest code at Github. Feel free to submit issues and pull requests.
+You can grab `latest code at Github <https://github.com/semirook/sphinxit>`_. Feel free to submit issues and pull requests.
 
 Contact
 -------
