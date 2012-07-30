@@ -618,7 +618,7 @@ class SXQLSnippets(object):
 
     @property
     def lex(self):
-        data = self._joiner_string.join(["'{0}'".format(s) for s in self._clean_data(self._data)])
+        data = self._joiner_string.join([u"'{0}'".format(s) for s in self._clean_data(self._data)])
         index = self._clean_attr(self._index)
         query = self._clean_attr(self._query)
 
