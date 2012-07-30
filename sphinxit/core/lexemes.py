@@ -170,7 +170,7 @@ class CommonSXQLWhereMixin(object):
 class SXQLMatch(object):
     _validator_exception_msg = "The query has to be a string. '{0}' is not."
     _empty_exception_msg = 'No query defined for full-text search.'
-    _eqs_chars = ['@', '!', '^', '(', ')', '+', '~', '-', '|', '[', ']', '/', '<<', '=', '$', '*']
+    _eqs_chars = ['@', '!', '^', '(', ')', '+', '~', '-', '|', '[', ']', '/', '<<', '=', '$', '*', '"']
     _lex_string = u"MATCH('{query}')"
     _joiner_string = u' '
 
@@ -191,6 +191,7 @@ class SXQLMatch(object):
         if escape:
             substract_chars_re = '|\\'.join(self._eqs_chars)
             query = re.sub(substract_chars_re, lambda m: r'\\{0}'.format(m.group()), query)
+            query = re.sub("'", '', query)  # escaping single quote doesn`t work
 
         self._attrs.append(query)
 

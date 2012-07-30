@@ -207,6 +207,15 @@ class TestSXQLMatch(TestCase):
         sxql_inst('@full_name Semirook$')
         self.assertEqual(sxql_inst.lex, ur"MATCH('\\@full_name \\^Roman \\@full_name Semirook\\$')")
 
+    def test_quotes_escape(self):
+        sxql_inst = SXQLMatch()
+        sxql_inst('"name')
+        self.assertEqual(sxql_inst.lex, ur"MATCH('{0}')".format(r'\\"name'))
+
+        sxql_inst_2 = SXQLMatch()
+        sxql_inst_2("l'amour")
+        self.assertEqual(sxql_inst_2.lex, ur"MATCH('lamour')")
+
     def test_unescaped_query(self):
         sxql_inst = SXQLMatch()
         mail_query = '@email "semirook@gmail.com"'
