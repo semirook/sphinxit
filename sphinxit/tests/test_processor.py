@@ -121,6 +121,13 @@ class TestSQLProcessor(TestCase):
         f = self.SphinxSearch('index').filter(Q(id__eq=1, id__gte=5) & Q(counter__eq=1, counter__gte=100)).get_sxql()
         self.assertEqual(f, "SELECT *, (id>=5 AND id=1) AND (counter>=100 AND counter=1) AS cnd FROM index WHERE cnd>0")
 
+        g = (self.SphinxSearch('index').filter(institute__eq=6506)
+                                       .filter(location__eq=1565)
+                                       .cluster('location')
+                                       .filter(Q(id__eq=1, id__gte=5))
+                                       .get_sxql())
+        self.assertEqual(g, "SELECT *, COUNT(*) AS num, (id>=5 AND id=1) AS cnd FROM index WHERE institute=6506 AND location=1565 AND cnd>0 GROUP BY location")
+
     def test_match_with_filters(self):
         a = self.SphinxSearch('index').match('Hello').filter(id__gte=1).get_sxql()
         self.assertEqual(a, "SELECT * FROM index WHERE MATCH('Hello') AND id>=1")

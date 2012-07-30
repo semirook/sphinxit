@@ -37,8 +37,9 @@ class SXQLSelect(object):
 
     @property
     def lex(self):
+        #TODO: добавить валидаторов
         if self._modificators:
-            self._attrs.append(*[l.lex for l in self._modificators])
+            map(self._attrs.append, [l.lex for l in self._modificators])
 
         if not self._attrs:
             raise SphinxQLSyntaxException(self._validator_exception_msg)
