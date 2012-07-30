@@ -44,7 +44,7 @@ class DBOperations(object):
 
     def _get_meta_info(self):
         sxql_query = "SHOW META"
-        result = self._get_sphinxql_data_(sxql_query)
+        result = self._get_data(sxql_query)
         info = dict([(x['Variable_name'], x['Value']) for x in result])
 
         return info
