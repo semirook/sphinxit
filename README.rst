@@ -8,3 +8,5 @@ anywhere you need powerful Sphinx-based search.
 
 Make full-text queries, filtering, ordering, grouping and aggregating your search results. 
 Forget about deprecated Sphinx API or unpredictable non-tested batteries. Sphinxit is just better.
+
+Documentation and examples are on RTD: http://sphinxit.readthedocs.org/
