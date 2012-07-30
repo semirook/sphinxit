@@ -239,7 +239,7 @@ class SphinxSnippets(DBOperations):
         Returns a list of snippets.
         """
         result = self._get_data(self.get_sxql())
-        return [x['snippets'] for x in result if x]
+        return [x['snippet'] for x in result if x]
 
 
 class SphinxSearch(SphinxSearchBase, DBOperations):
