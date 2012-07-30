@@ -1,4 +1,4 @@
-include CHANGELOG LICENSE
+include CHANGELOG LICENSE README.rst
 recursive-include docs *
 recursive-exclude docs *.pyc
 recursive-exclude docs *.pyo

@@ -15,7 +15,7 @@ setup(
     license='BSD',
     url='https://github.com/semirook/sphinxit',
     description='Lite and powerful SphinxQL query constructor',
-    long_description=read(path.join(path.dirname(__file__), 'README.md')),
+    long_description=read(path.join(path.dirname(__file__), 'README.rst')),
     classifiers = [
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
