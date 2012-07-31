@@ -26,7 +26,7 @@ it`s quite useful for understanding internal project architecture.
 Development
 -----------
 
-You can grab `latest code at Github <https://github.com/semirook/sphinxit>`_. Feel free to submit issues and pull requests.
+You can grab `latest code from Github <https://github.com/semirook/sphinxit>`_. Feel free to submit issues and pull requests.
 
 Contact
 -------

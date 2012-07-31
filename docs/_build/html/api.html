@@ -26,7 +26,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Sphinxit 0.1 documentation" href="index.html" />
-    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="Integration" href="integration.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +40,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="quickstart.html" title="Quickstart"
+          <a href="changelog.html" title="Changelog"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="integration.html" title="Integration"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Sphinxit 0.1 documentation</a> &raquo;</li> 
       </ul>
@@ -113,7 +117,7 @@ via different ports if you whant to:</p>
 and attaches proper <tt class="xref py py-attr docutils literal"><span class="pre">connection</span></tt> to them:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
 <span class="n">search_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;Hello!&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
-<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;hello world&#39;</span><span class="p">],</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
 <dl class="method">
@@ -139,7 +143,7 @@ and attaches proper <tt class="xref py py-attr docutils literal"><span class="pr
 <tt class="descname">Snippets</tt><big>(</big><em>index</em>, <em>data</em>, <em>query</em><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxConnector.Snippets" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference internal" href="#sphinxit.search.SphinxSnippets" title="sphinxit.search.SphinxSnippets"><tt class="xref py py-class docutils literal"><span class="pre">SphinxSnippets</span></tt></a> instance constructor:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
-<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;hello world&#39;</span><span class="p">],</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -148,7 +152,7 @@ and attaches proper <tt class="xref py py-attr docutils literal"><span class="pr
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>index</strong> &#8211; Sphinx index name</li>
-<li><strong>data</strong> &#8211; the list of strings to extract snippets from</li>
+<li><strong>data</strong> &#8211; a string or a list of strings to extract snippets from</li>
 <li><strong>query</strong> &#8211; the full-text query to build snippets for</li>
 </ul>
 </td>
@@ -171,7 +175,7 @@ For example:</p>
 <dl class="method">
 <dt id="sphinxit.search.SphinxConnector.connect">
 <tt class="descname">connect</tt><big>(</big><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxConnector.connect" title="Permalink to this definition">¶</a></dt>
-<dd><p>There is no necessity to connect manually but in some rare cases you may need to. 
+<dd><p>There is no necessity to connect manually but in some rare cases you may need to.
 For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
 <span class="n">Sphinxit</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -242,7 +246,7 @@ query without initializing <a class="reference internal" href="#sphinxit.search.
 <dl class="method">
 <dt id="sphinxit.search.SphinxSearch.filter">
 <tt class="descname">filter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxSearch.filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provides simple and clean interface for filtering search results within different 
+<dd><p>Provides simple and clean interface for filtering search results within different
 comparison operators like (=, !=, &lt;, &gt;, &lt;=, &gt;=), IN, BETWEEN and even OR (Sphinx doesn&#8217;t support it yet).
 Sphinxit uses Django-style syntax for that.</p>
 <table border="1" class="docutils">
@@ -308,11 +312,11 @@ It &#8220;will be in the future&#8221; but no one knows when. Sphinxit provides 
 </pre></div>
 </div>
 <p>It works well even with more complex queries, you can mix Q and simple filters in one chain,
-add as much Q expressions as you want:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">id__eq</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">id__gte</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">counter__in</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span> <span class="o">&amp;</span> <span class="n">Q</span><span class="p">(</span><span class="n">id__lt</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">id__eq</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+add as much Q expressions as you need:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">id__eq</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">id__gte</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">counter__eq</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">Q</span><span class="p">(</span><span class="n">id__lt</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">id__eq</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span><span class="p">,</span> <span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">OR</span> <span class="p">(</span><span class="n">id</span><span class="o">&gt;=</span><span class="mi">5</span><span class="p">)</span> <span class="k">AND</span> <span class="p">(</span><span class="n">counter</span> <span class="k">IN</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span> <span class="k">AND</span> <span class="p">(</span><span class="n">id</span><span class="o">&lt;</span><span class="mi">20</span><span class="p">)</span> <span class="k">AS</span> <span class="n">cnd</span> <span class="k">FROM</span> <span class="k">index</span> <span class="k">WHERE</span> <span class="n">cnd</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">AND</span> <span class="n">id</span><span class="o">=</span><span class="mi">2</span>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span><span class="p">,</span> <span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">OR</span> <span class="p">(</span><span class="n">id</span><span class="o">&gt;=</span><span class="mi">5</span><span class="p">)</span> <span class="k">AND</span> <span class="p">(</span><span class="n">counter</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">AND</span> <span class="p">(</span><span class="n">id</span><span class="o">&lt;</span><span class="mi">20</span><span class="p">)</span> <span class="k">AS</span> <span class="n">cnd</span> <span class="k">FROM</span> <span class="k">index</span> <span class="k">WHERE</span> <span class="n">cnd</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">AND</span> <span class="n">id</span><span class="o">=</span><span class="mi">2</span>
 </pre></div>
 </div>
 <p>You can specify more than one condition in atomic Q:</p>
@@ -347,7 +351,7 @@ add as much Q expressions as you want:</p>
 <dt id="sphinxit.search.SphinxSearch.get_sxql">
 <tt class="descname">get_sxql</tt><big>(</big><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxSearch.get_sxql" title="Permalink to this definition">¶</a></dt>
 <dd><p>Call this method for debugging result SphinxQL query:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_sxql</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sxql</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_sxql</span><span class="p">()</span>
 </pre></div>
 </div>
 <div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span> <span class="n">title</span> <span class="k">FROM</span> <span class="k">index</span>
@@ -406,7 +410,7 @@ it safe for <tt class="docutils literal"><span class="pre">searchd</span></tt> a
 <div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="k">index</span> <span class="k">WHERE</span> <span class="k">MATCH</span><span class="p">(</span><span class="s1">&#39;semirook\@gmail.com&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>You can set <tt class="xref py py-attr docutils literal"><span class="pre">escape</span></tt> attribute to <tt class="docutils literal"><span class="pre">False</span></tt> to use extended query syntax 
+<p>You can set <tt class="xref py py-attr docutils literal"><span class="pre">escape</span></tt> attribute to <tt class="docutils literal"><span class="pre">False</span></tt> to use extended query syntax
 (<a class="reference external" href="http://sphinxsearch.com/docs/current.html#extended-syntax">http://sphinxsearch.com/docs/current.html#extended-syntax</a>) without escaping special symbols:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;@email &quot;semirook@gmail.com&quot;&#39;</span><span class="p">,</span> <span class="n">escape</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
@@ -481,8 +485,8 @@ as in this simple example:</p>
 <span class="o">...</span>
 </pre></div>
 </div>
-<p>Returns result dictionary with <tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt> and <tt class="xref py py-attr docutils literal"><span class="pre">meta</span></tt> keys: 
-<tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt> is the list of dictionaries with documents ids and another specified attributes, 
+<p>Returns result dictionary with <tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt> and <tt class="xref py py-attr docutils literal"><span class="pre">meta</span></tt> keys:
+<tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt> is the list of dictionaries with documents ids and another specified attributes,
 <tt class="xref py py-attr docutils literal"><span class="pre">meta</span></tt> is the dictionary with some <a class="reference external" href="http://sphinxsearch.com/docs/2.0.3/sphinxql-show-meta.html">additional meta-information</a>
 about your query.</p>
 <p>Raises <tt class="xref py py-exc docutils literal"><span class="pre">SphinxQLSyntaxException</span></tt> if can&#8217;t process query for some reasons.</p>
@@ -544,9 +548,9 @@ the best row within a group will to be selected:</p>
 <dd><p>Implements SphinxQL <a class="reference external" href="http://sphinxsearch.com/docs/current.html#sphinxql-call-snippets">CALL SNIPPETS syntax</a>
 and supports the full set of <a class="reference external" href="http://sphinxsearch.com/docs/current.html#api-func-buildexcerpts">excerpts parameters</a>.
 Sphinx doesn`t provide documents fetching by indexes out of the box. You have to do it yourself and pass
-documents strings to extract the snippets from as <tt class="xref py py-attr docutils literal"><span class="pre">data</span></tt>. The usage is quite simple:</p>
+documents string or strings to extract the snippets from as <tt class="xref py py-attr docutils literal"><span class="pre">data</span></tt>. The usage is quite simple:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
-<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;hello world&#39;</span><span class="p">],</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -560,7 +564,7 @@ query without initializing <a class="reference internal" href="#sphinxit.search.
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>index</strong> &#8211; Sphinx index name</li>
-<li><strong>data</strong> &#8211; the list of strings to extract snippets from</li>
+<li><strong>data</strong> &#8211; a string or a list of strings to extract snippets from</li>
 <li><strong>query</strong> &#8211; the full-text query to build snippets for</li>
 </ul>
 </td>
@@ -574,7 +578,7 @@ query without initializing <a class="reference internal" href="#sphinxit.search.
 <div class="highlight-python"><div class="highlight"><pre><span class="n">sxql</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;only good news&#39;</span><span class="p">,</span> <span class="s">&#39;news&#39;</span><span class="p">],</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;Good News&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_sxql</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="highlight-sql"><div class="highlight"><pre><span class="k">CALL</span> <span class="n">SNIPPETS</span><span class="p">((</span><span class="s1">&#39;only good news&#39;</span><span class="p">),</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;Good News&#39;</span><span class="p">)</span>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">CALL</span> <span class="n">SNIPPETS</span><span class="p">((</span><span class="s1">&#39;only good news&#39;</span><span class="p">,</span> <span class="s1">&#39;news&#39;</span><span class="p">),</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;Good News&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -588,15 +592,15 @@ query without initializing <a class="reference internal" href="#sphinxit.search.
                     <span class="s">&#39;before_match&#39;</span><span class="p">:</span> <span class="s">&#39;&lt;strong&gt;&#39;</span><span class="p">,</span>
                     <span class="s">&#39;after_match&#39;</span><span class="p">:</span> <span class="s">&#39;&lt;/strong&gt;&#39;</span><span class="p">,</span>
                     <span class="p">}</span>
-<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> 
-                                     <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;hello world&#39;</span><span class="p">],</span> 
+<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span>
+                                     <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span>
                                      <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="o">**</span><span class="n">snippets_options</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>or like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
-<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> 
-                                     <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;hello world&#39;</span><span class="p">],</span> 
+<span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span>
+                                     <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span>
                                      <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">320</span><span class="p">,</span> <span class="n">allow_empty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -606,7 +610,7 @@ query without initializing <a class="reference internal" href="#sphinxit.search.
 <dt id="sphinxit.search.SphinxSnippets.process">
 <tt class="descname">process</tt><big>(</big><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxSnippets.process" title="Permalink to this definition">¶</a></dt>
 <dd><p>The query is not processed until you call the <a class="reference internal" href="#sphinxit.search.SphinxSnippets.process" title="sphinxit.search.SphinxSnippets.process"><tt class="xref py py-meth docutils literal"><span class="pre">process()</span></tt></a> method.
-Returns a list of snippets.</p>
+Returns the list of snippets or single string if it`s the only.</p>
 </dd></dl>
 
 </dd></dl>
@@ -620,8 +624,11 @@ Returns a list of snippets.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="quickstart.html"
-                        title="previous chapter">Quickstart</a></p>
+  <p class="topless"><a href="integration.html"
+                        title="previous chapter">Integration</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="changelog.html"
+                        title="next chapter">Changelog</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/api.txt"
@@ -654,7 +661,10 @@ Returns a list of snippets.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="quickstart.html" title="Quickstart"
+          <a href="changelog.html" title="Changelog"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="integration.html" title="Integration"
              >previous</a> |</li>
         <li><a href="index.html">Sphinxit 0.1 documentation</a> &raquo;</li> 
       </ul>

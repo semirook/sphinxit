@@ -89,7 +89,7 @@ class SphinxConnector(object):
 
         Sphinxit = SphinxConnector()
         search_results = Sphinxit.Index('some_index').match('Hello!').process()
-        snippets_results = Sphinxit.Snippets('some_index', data=['hello world'], query='hello').process()
+        snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
     """
 
     def __init__(self, **kwargs):
@@ -109,7 +109,7 @@ class SphinxConnector(object):
 
     def connect(self):
         """
-        There is no necessity to connect manually but in some rare cases you may need to. 
+        There is no necessity to connect manually but in some rare cases you may need to.
         For example::
 
             Sphinxit = SphinxConnector()
@@ -156,10 +156,10 @@ class SphinxConnector(object):
         :class:`SphinxSnippets` instance constructor::
 
             Sphinxit = SphinxConnector()
-            snippets_results = Sphinxit.Snippets('some_index', data=['hello world'], query='hello').process()
+            snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
 
         :param index: Sphinx index name
-        :param data: the list of strings to extract snippets from
+        :param data: a string or a list of strings to extract snippets from
         :param query: the full-text query to build snippets for
         """
         new_constructor = SphinxSnippets
@@ -173,17 +173,17 @@ class SphinxSnippets(DBOperations):
     Implements SphinxQL `CALL SNIPPETS syntax <http://sphinxsearch.com/docs/current.html#sphinxql-call-snippets>`_
     and supports the full set of `excerpts parameters <http://sphinxsearch.com/docs/current.html#api-func-buildexcerpts>`_.
     Sphinx doesn`t provide documents fetching by indexes out of the box. You have to do it yourself and pass
-    documents strings to extract the snippets from as :attr:`data`. The usage is quite simple::
+    documents string or strings to extract the snippets from as :attr:`data`. The usage is quite simple::
 
         Sphinxit = SphinxConnector()
-        snippets_results = Sphinxit.Snippets('some_index', data=['hello world'], query='hello').process()
+        snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
 
     .. note::
         :class:`SphinxSnippets` needs :attr:`connector` to refer to ``searchd``, so you can't actually process
         query without initializing :class:`SphinxConnector` first.
 
     :param index: Sphinx index name
-    :param data: the list of strings to extract snippets from
+    :param data: a string or a list of strings to extract snippets from
     :param query: the full-text query to build snippets for
     """
 
@@ -201,13 +201,13 @@ class SphinxSnippets(DBOperations):
 
         .. code-block:: sql
 
-            CALL SNIPPETS(('only good news'), 'index', 'Good News')
+            CALL SNIPPETS(('only good news', 'news'), 'index', 'Good News')
 
         """
         return SXQLSnippets(
-            self._index, 
-            self._data, 
-            self._query, 
+            self._index,
+            self._data,
+            self._query,
             self._options).lex
 
     def options(self, **kwargs):
@@ -219,15 +219,15 @@ class SphinxSnippets(DBOperations):
                                 'before_match': '<strong>',
                                 'after_match': '</strong>',
                                 }
-            snippets_results = Sphinxit.Snippets('some_index', 
-                                                 data=['hello world'], 
+            snippets_results = Sphinxit.Snippets('some_index',
+                                                 data='hello world',
                                                  query='hello').options(**snippets_options).process()
 
         or like this::
 
             Sphinxit = SphinxConnector()
-            snippets_results = Sphinxit.Snippets('some_index', 
-                                                 data=['hello world'], 
+            snippets_results = Sphinxit.Snippets('some_index',
+                                                 data='hello world',
                                                  query='hello').options(limit=320, allow_empty=True).process()
         """
         self._options = kwargs
@@ -236,10 +236,12 @@ class SphinxSnippets(DBOperations):
     def process(self):
         """
         The query is not processed until you call the :meth:`process` method.
-        Returns a list of snippets.
+        Returns the list of snippets or single string if it`s the only.
         """
         result = self._get_data(self.get_sxql())
-        return [x['snippet'] for x in result if x]
+        snippets = [x['snippet'] for x in result if x]
+
+        return snippets[0] if len(snippets) == 1 else snippets
 
 
 class SphinxSearch(SphinxSearchBase, DBOperations):
@@ -249,7 +251,7 @@ class SphinxSearch(SphinxSearchBase, DBOperations):
 
         Sphinxit = SphinxConnector()
         result = Sphinxit('some_index').process()
-    
+
     To make search by several indexes (you will, if you have main and delta indexes, for example), just separate
     their names with comma::
 
@@ -280,8 +282,8 @@ class SphinxSearch(SphinxSearchBase, DBOperations):
             sphinx_result = query.process()
             ...
 
-        Returns result dictionary with :attr:`result` and :attr:`meta` keys: 
-        :attr:`result` is the list of dictionaries with documents ids and another specified attributes, 
+        Returns result dictionary with :attr:`result` and :attr:`meta` keys:
+        :attr:`result` is the list of dictionaries with documents ids and another specified attributes,
         :attr:`meta` is the dictionary with some `additional meta-information <http://sphinxsearch.com/docs/2.0.3/sphinxql-show-meta.html>`_
         about your query.
 

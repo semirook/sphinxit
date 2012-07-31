@@ -170,6 +170,9 @@ class TestSXQLFilter(TestCase):
         where_def_9 = SXQLFilter()(id__in=['2', '4', 5])
         self.assertEqual(where_def_9.lex, u'id IN (2,4,5)')
 
+        where_def_10 = SXQLFilter()(id__neq=3)
+        self.assertEqual(where_def_10.lex, u'id!=3')
+
         more_where_defs = SXQLFilter()(id__eq=1, att1__lt=1, att2__between=[1, 5])
         results = ('id=1 AND att2 BETWEEN 1 AND 5 AND att1<1',
                    'id=1 AND att1<1 AND att2 BETWEEN 1 AND 5',
@@ -233,12 +236,12 @@ class TestQ(TestCase):
     def test_concat(self):
         sxql_inst = Q(id__eq=1, id__gte=5)
         results = ['(id=1 AND id>=5)', '(id>=5 AND id=1)']
-        self.assertTrue(sxql_inst.lex in results)
+        self.assertIn(sxql_inst.lex, results)
 
     def test_negative_concat(self):
         sxql_inst = ~Q(id__eq=1, id__gte=5)
         results = ['(id=1 OR id>=5)', '(id>=5 OR id=1)']
-        self.assertTrue(sxql_inst.lex in results)
+        self.assertIn(sxql_inst.lex, results)
 
 
 class TestSXQLORFilter(TestCase):
@@ -250,23 +253,25 @@ class TestSXQLORFilter(TestCase):
         sxql_inst_2 = SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5))
         self.assertEqual(sxql_inst_2.lex, u'(id=1) AND (id>=5) AS cnd')
 
-        sxql_inst_3 = SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5) | Q(counter__between=[1, 5]))
-        self.assertEqual(sxql_inst_3.lex, u'(id=1) AND (id>=5) OR (counter BETWEEN 1 AND 5) AS cnd')
-
-        sxql_inst_4 = SXQLORFilter()(Q(id__eq=1) & (Q(id__gte=5) | Q(id__lt=4)))
-        self.assertEqual(sxql_inst_4.lex, u'(id>=5) OR (id<4) AND (id=1) AS cnd')
+        sxql_inst_3 = SXQLORFilter()(Q(id__eq=1) & (Q(id__gte=5) | Q(id__lt=4)))
+        results_3 = ["(id>=5) OR (id<4) AND (id=1) AS cnd",
+                     "(id=1) AND (id>=5) OR (id<4) AS cnd"]
+        self.assertIn(sxql_inst_3.lex, results_3)
 
     def test_complex_expression(self):
-        sxql_inst_1 = SXQLORFilter()(Q(id__eq=1, id__gte=5) | ~Q(counter__in=[1, 5], id__eq=42))
-        results = ['(id>=5 AND id=1) OR (counter IN (1,5) OR id=42) AS cnd',
-                   '(id=1 AND id>=5) OR (counter IN (1,5) OR id=42) AS cnd',
-                   '(id>=5 AND id=1) OR (id=42 OR counter IN (1,5)) AS cnd',
-                   '(id=1 AND id>=5) OR (id=42 OR counter IN (1,5)) AS cnd']
-        self.assertTrue(sxql_inst_1.lex in results)
+        sxql_inst_1 = SXQLORFilter()(Q(id__eq=1, id__gte=5) | ~Q(counter__lt=20, id__eq=42))
+        results = ['(id>=5 AND id=1) OR (id=42 OR counter<20) AS cnd',
+                   '(id=1 AND id>=5) OR (id=42 OR counter<20) AS cnd',
+                   '(id>=5 AND id=1) OR (counter<20 OR id=42) AS cnd',
+                   '(id=1 AND id>=5) OR (counter<20 OR id=42) AS cnd']
+        self.assertIn(sxql_inst_1.lex, results)
 
     def test_wrong_attrs(self):
         sxql_inst_1 = SXQLORFilter()(Q(id__eq=1) + Q(id__gte=5))
         self.assertEqual(sxql_inst_1.lex, u'(id=1) AND (id>=5) AS cnd')
+
+        with self.assertRaises(SphinxQLSyntaxException):
+            SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5) | Q(counter__between=[1, 5])).lex
 
 
 class TestCount(TestCase):
@@ -395,6 +400,9 @@ class TestSXQLSnippets(TestCase):
         with self.assertRaises(SphinxQLSyntaxException):
             SXQLSnippets('index', 'Good News', {}, ['good news and bad news', 'only good news']).lex
 
+        with self.assertRaises(SphinxQLSyntaxException):
+            SXQLSnippets('index', 42, 'only good news').lex
+
     def test_wrong_options_param(self):
         wrong_param_snippet_options = {'before_match': '<strong>',
                                        'aftermatch': '</strong>',
@@ -412,4 +420,8 @@ class TestSXQLSnippets(TestCase):
 
     def test_quotes_escaping(self):
         sxql_inst_1 = SXQLSnippets('index', data=["only l'amour", "l'oreal"], query="L'amour")
-        self.assertEqual(sxql_inst_1.lex, u"CALL SNIPPETS(('only lamour', 'loreal'), 'index', 'Lamour')")
+        self.assertEqual(sxql_inst_1.lex, "CALL SNIPPETS(('only lamour', 'loreal'), 'index', 'Lamour')")
+
+    def test_string_as_data(self):
+        sxql_inst = SXQLSnippets('index', data='only good news', query='Good News')
+        self.assertEqual(sxql_inst.lex, "CALL SNIPPETS(('only good news'), 'index', 'Good News')")

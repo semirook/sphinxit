@@ -37,7 +37,6 @@ class SXQLSelect(object):
 
     @property
     def lex(self):
-        #TODO: добавить валидаторов
         if self._modificators:
             map(self._attrs.append, [l.lex for l in self._modificators])
 
@@ -110,31 +109,31 @@ class SXQLFrom(object):
 
 
 class CommonSXQLWhereMixin(object):
-    _not_correct_attr_msg = "Can't parse '{0}' condition."
+    _not_correct_attr_msg = "'{0}' condition is not allowed here."
     _attr_value_is_string_msg = 'Attribute value cannot be a string anyway.'
     _not_iterable_values_msg = "Condition has to be an iterable object. '{0}' is not."
     _not_integer_values_msg = "Condition has to be a set of integers. '{0}' is not."
     _not_valid_range_msg = "Condition has to be a range of two integers. '{0}' is not."
     _attr_value_is_range_msg = 'Attribute value has to be an integer, not range.'
 
-    def _clean_rendered_attrs_(self, k_attr, v_attr):
-        attr_to_str_map = {'__eq': u'{a}={v}',
-                           '__neq': u'{a}!={v}',
-                           '__gt': u'{a}>{v}',
-                           '__gte': u'{a}>={v}',
-                           '__lt': u'{a}<{v}',
-                           '__lte': u'{a}<={v}',
-                           '__in': u'{a} IN ({v})',
-                           '__between': u'{a} BETWEEN {f_v} AND {s_v}',
-                           }
+    allowed_conditions_map = {'__eq': u'{a}={v}',
+                              '__neq': u'{a}!={v}',
+                              '__gt': u'{a}>{v}',
+                              '__gte': u'{a}>={v}',
+                              '__lt': u'{a}<{v}',
+                              '__lte': u'{a}<={v}',
+                              '__in': u'{a} IN ({v})',
+                              '__between': u'{a} BETWEEN {f_v} AND {s_v}',
+                              }
 
+    def _clean_rendered_attrs(self, k_attr, v_attr):
         if isinstance(v_attr, basestring):
             try:
                 v_attr = int(v_attr)
             except ValueError:
                 raise SphinxQLSyntaxException(self._attr_value_is_string_msg)
 
-        for ending in attr_to_str_map.keys():
+        for ending in self.allowed_conditions_map.keys():
             if k_attr.endswith(ending):
                 a = k_attr[:k_attr.rindex(ending)]
                 v = v_attr
@@ -157,12 +156,12 @@ class CommonSXQLWhereMixin(object):
                     if len(v_attr) != 2:
                         raise SphinxQLSyntaxException(self._not_valid_range_msg.format(v_attr))
                     f_v, s_v = v_attr
-                    return attr_to_str_map[ending].format(a=a, f_v=f_v, s_v=s_v)
+                    return self.allowed_conditions_map[ending].format(a=a, f_v=f_v, s_v=s_v)
 
                 elif ending == '__in':
                     v = ','.join(map(str, v_attr))
 
-                return attr_to_str_map[ending].format(a=a, v=v)
+                return self.allowed_conditions_map[ending].format(a=a, v=v)
 
         raise SphinxQLSyntaxException(self._not_correct_attr_msg.format(k_attr))
 
@@ -404,7 +403,7 @@ class SXQLFilter(CommonSXQLWhereMixin):
 
     def __call__(self, **kwargs):
         for k_attr, v_attr in kwargs.items():
-            self._attrs.add(self._clean_rendered_attrs_(k_attr, v_attr))
+            self._attrs.add(self._clean_rendered_attrs(k_attr, v_attr))
         return self
 
     @property
@@ -414,10 +413,17 @@ class SXQLFilter(CommonSXQLWhereMixin):
 
 
 class Q(CommonSXQLWhereMixin):
-    _validator_exception_msg = u'Empty Q is not allowed'
+    _validator_exception_msg = u'Empty Q expression is not allowed.'
     _lex_string = u'({clauses})'
     _and_joiner = u' AND '
     _or_joiner = u' OR '
+
+    allowed_conditions_map = {'__eq': u'{a}={v}',
+                              '__gt': u'{a}>{v}',
+                              '__gte': u'{a}>={v}',
+                              '__lt': u'{a}<{v}',
+                              '__lte': u'{a}<={v}',
+                              }
 
     def __init__(self, **kwargs):
         self._attrs = []
@@ -425,7 +431,7 @@ class Q(CommonSXQLWhereMixin):
         self._joiner_string = self._and_joiner
 
         for k_attr, v_attr in kwargs.items():
-            self._attrs.append(self._clean_rendered_attrs_(k_attr, v_attr))
+            self._attrs.append(self._clean_rendered_attrs(k_attr, v_attr))
 
     def _pair_resolve(self, one, two):
         if one._q_buffer:
@@ -542,7 +548,7 @@ class SXQLSnippets(object):
     _value_validator_exception_msg = "Wrong value for '{0}' snippet parameter is used. Allowed values are {1}."
     _parameter_validator_exception_msg = "'{0}' snippet parameter is not supported by Sphinx."
     _not_string_validator_exception_msg = "'{0}' attribute has to be a string."
-    _data_validator_exception_msg = "Source data has to be a list of strings."
+    _data_validator_exception_msg = "Source data has to be a string or a list of strings. '{0} is not.'"
 
     excerpts_params = {"before_match": {'type': basestring, 'defaults': '<b>'},
                        "after_match": {'type': basestring, 'defaults': '</b>'},
@@ -594,9 +600,12 @@ class SXQLSnippets(object):
         return attr
 
     def _clean_data(self, data):
-        if not (isinstance(data, (list, tuple)) 
-            or False in map(lambda d: isinstance(d, basestring), data)):
+        if not isinstance(data, collections.Iterable):
             raise SphinxQLSyntaxException(self._data_validator_exception_msg.format(data))
+        if not isinstance(data, basestring) and False in map(lambda d: isinstance(d, basestring), data):
+            raise SphinxQLSyntaxException(self._data_validator_exception_msg.format(data))
+        if isinstance(data, basestring):
+            data = [data]
 
         return map(lambda x: re.sub("'", '', x), data)  # escaping single quote doesn`t work
 

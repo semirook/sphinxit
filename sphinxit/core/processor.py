@@ -58,7 +58,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
             Sphinxit('index').select('id', 'title')
 
         .. code-block:: sql
-            
+
             SELECT id, title FROM index
 
         if you don`t specify any attributes::
@@ -87,7 +87,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
 
             SELECT * FROM index WHERE MATCH('semirook\\@gmail.com')
 
-        You can set :attr:`escape` attribute to ``False`` to use extended query syntax 
+        You can set :attr:`escape` attribute to ``False`` to use extended query syntax
         (http://sphinxsearch.com/docs/current.html#extended-syntax) without escaping special symbols::
 
             Sphinxit('index').match('@email "semirook@gmail.com"', escape=False)
@@ -117,7 +117,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
 
     def filter(self, *args, **kwargs):
         """
-        Provides simple and clean interface for filtering search results within different 
+        Provides simple and clean interface for filtering search results within different
         comparison operators like (=, !=, <, >, <=, >=), IN, BETWEEN and even OR (Sphinx doesn't support it yet).
         Sphinxit uses Django-style syntax for that.
 
@@ -149,7 +149,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
             Sphinxit('index').filter(id__gte=5).filter(counter__in=[1, 5])
 
         .. code-block:: sql
-            
+
             SELECT * FROM index WHERE id>=5 AND counter IN (1,5)
 
         Lyrical digression. I don't know why OR is not supported by Sphinx out of the box.
@@ -163,18 +163,18 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
             SELECT *, (id>=5 AND id=1) AS cnd FROM index WHERE cnd>0
 
         It works well even with more complex queries, you can mix Q and simple filters in one chain,
-        add as much Q expressions as you want::
+        add as much Q expressions as you need::
 
-            Sphinxit('index').filter(Q(id__eq=1) | Q(id__gte=5)).filter(Q(counter__in=[1, 5]) & Q(id__lt=20)).filter(id__eq=2)
+            Sphinxit('index').filter(Q(id__eq=1) | Q(id__gte=5)).filter(Q(counter__eq=1) & Q(id__lt=20)).filter(id__eq=2)
 
         .. code-block:: sql
 
-            SELECT *, (id=1) OR (id>=5) AND (counter IN (1,5)) AND (id<20) AS cnd FROM index WHERE cnd>0 AND id=2
+            SELECT *, (id=1) OR (id>=5) AND (counter=1) AND (id<20) AS cnd FROM index WHERE cnd>0 AND id=2
 
         You can specify more than one condition in atomic Q::
 
             Sphinxit('index').filter(Q(id__eq=1, id__gte=5) & Q(counter__eq=1, counter__gte=100))
-        
+
         .. code-block:: sql
 
             SELECT *, (id=1 AND id>=5) AND (counter=1 AND counter>=100) AS cnd FROM index WHERE cnd>0
@@ -208,7 +208,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
         You can order search results by any attribute with specified direction ('ASC' or 'DESC')::
 
             Sphinxit('index').order_by('title', 'asc')
-        
+
         .. code-block:: sql
 
             SELECT * FROM index ORDER BY title ASC
@@ -337,10 +337,10 @@ class SphinxSearchBase(SphinxSearchActionMethods):
         """
         Call this method for debugging result SphinxQL query::
 
-            Sphinxit('index').select('id', 'title').get_sxql()
+            sxql = Sphinxit('index').select('id', 'title').get_sxql()
 
         .. code-block:: sql
-            
+
             SELECT id, title FROM index
         """
         return self._sxql_dragon(self._container.release_chain)

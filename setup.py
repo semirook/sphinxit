@@ -8,7 +8,7 @@ read = lambda filepath: codecs.open(filepath, 'r', 'utf-8').read()
 
 setup(
     name='sphinxit',
-    version='0.1',
+    version='0.1.1',
     author='Roman Semirook',
     author_email='semirook@gmail.com',
     packages=find_packages(),
@@ -16,7 +16,7 @@ setup(
     url='https://github.com/semirook/sphinxit',
     description='Lite and powerful SphinxQL query constructor',
     long_description=read(path.join(path.dirname(__file__), 'README.rst')),
-    classifiers = [
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
