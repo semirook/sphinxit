@@ -5,3 +5,4 @@
 *.pyc
 .DS_Store
 sphinxit.sublime-*
+.noseids
