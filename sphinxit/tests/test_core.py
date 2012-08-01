@@ -236,12 +236,12 @@ class TestQ(TestCase):
     def test_concat(self):
         sxql_inst = Q(id__eq=1, id__gte=5)
         results = ['(id=1 AND id>=5)', '(id>=5 AND id=1)']
-        self.assertIn(sxql_inst.lex, results)
+        self.assertTrue(sxql_inst.lex in results)
 
     def test_negative_concat(self):
         sxql_inst = ~Q(id__eq=1, id__gte=5)
         results = ['(id=1 OR id>=5)', '(id>=5 OR id=1)']
-        self.assertIn(sxql_inst.lex, results)
+        self.assertTrue(sxql_inst.lex in results)
 
 
 class TestSXQLORFilter(TestCase):
@@ -256,7 +256,7 @@ class TestSXQLORFilter(TestCase):
         sxql_inst_3 = SXQLORFilter()(Q(id__eq=1) & (Q(id__gte=5) | Q(id__lt=4)))
         results_3 = ["(id>=5) OR (id<4) AND (id=1) AS cnd",
                      "(id=1) AND (id>=5) OR (id<4) AS cnd"]
-        self.assertIn(sxql_inst_3.lex, results_3)
+        self.assertTrue(sxql_inst_3.lex in results_3)
 
     def test_complex_expression(self):
         sxql_inst_1 = SXQLORFilter()(Q(id__eq=1, id__gte=5) | ~Q(counter__lt=20, id__eq=42))
@@ -264,14 +264,12 @@ class TestSXQLORFilter(TestCase):
                    '(id=1 AND id>=5) OR (id=42 OR counter<20) AS cnd',
                    '(id>=5 AND id=1) OR (counter<20 OR id=42) AS cnd',
                    '(id=1 AND id>=5) OR (counter<20 OR id=42) AS cnd']
-        self.assertIn(sxql_inst_1.lex, results)
+        self.assertTrue(sxql_inst_1.lex in results)
 
     def test_wrong_attrs(self):
         sxql_inst_1 = SXQLORFilter()(Q(id__eq=1) + Q(id__gte=5))
         self.assertEqual(sxql_inst_1.lex, u'(id=1) AND (id>=5) AS cnd')
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5) | Q(counter__between=[1, 5])).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5) | Q(counter__between=[1, 5])).lex)
 
 
 class TestCount(TestCase):
@@ -290,11 +288,8 @@ class TestCount(TestCase):
         self.assertEqual(sxql_inst_4.lex, u'COUNT(*) AS my_alias')
 
     def test_wrong_attr(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            Count(['counter']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            Count(alias='count').lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: Count(['counter']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: Count(alias='count').lex)
 
 
 class TestAvg(TestCase):
@@ -307,11 +302,8 @@ class TestAvg(TestCase):
         self.assertEqual(sxql_inst_2.lex, u'AVG(price) AS price_mid')
 
     def test_wrong_attr(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            Avg(['counter']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            Avg('counter', 154).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: Avg(['counter']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: Avg('counter', 154).lex)
 
 
 class TestMin(TestCase):
@@ -324,11 +316,8 @@ class TestMin(TestCase):
         self.assertEqual(sxql_inst_2.lex, u'MIN(price) AS minimal')
 
     def test_wrong_attr(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            Min(['price']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            Min('price', 154).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: Min(['price']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: Min('price', 154).lex)
 
 
 class TestMax(TestCase):
@@ -341,11 +330,7 @@ class TestMax(TestCase):
         self.assertEqual(sxql_inst_2.lex, u'MAX(price) AS maximum')
 
     def test_wrong_attr(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            Max(['price']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            Max('price', 154).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: Max(['price']).lex)
 
 
 class TestSum(TestCase):
@@ -358,11 +343,8 @@ class TestSum(TestCase):
         self.assertEqual(sxql_inst_2.lex, u'SUM(counter) AS summary')
 
     def test_wrong_attr(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            Sum(['counter']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            Sum('counter', 154).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: Sum(['counter']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: Sum('counter', 154).lex)
 
 
 class TestSXQLSnippets(TestCase):
@@ -378,7 +360,7 @@ class TestSXQLSnippets(TestCase):
         possible_options_ordering = ["320 AS limit, 1 AS allow_empty", "1 AS allow_empty, 320 AS limit"]
         sxql_inst = SXQLSnippets('index', data=['only good news'], query='Good News', options=snippet_options)
         possible_queries = ["CALL SNIPPETS(('only good news'), 'index', 'Good News', {opts})".format(opts=opts) for opts in possible_options_ordering]
-        self.assertIn(sxql_inst.lex, possible_queries)
+        self.assertTrue(sxql_inst.lex in possible_queries)
 
     def test_with_options_2(self):
         snippet_options = {'before_match': '<strong>',
@@ -388,35 +370,31 @@ class TestSXQLSnippets(TestCase):
                                      "'</strong>' AS after_match, '<strong>' AS before_match"]
         sxql_inst = SXQLSnippets('index', data=['only good news'], query='Good News', options=snippet_options)
         possible_queries = ["CALL SNIPPETS(('only good news'), 'index', 'Good News', {opts})".format(opts=opts) for opts in possible_options_ordering]
-        self.assertIn(sxql_inst.lex, possible_queries)
+        self.assertTrue(sxql_inst.lex in possible_queries)
 
     def test_wrong_usage(self):
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets(['good news and bad news', 'only good news'], 'index', 'Good News').lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', 'Good News', ['good news and bad news', 'only good news']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', 'Good News', {}, ['good news and bad news', 'only good news']).lex
-
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', 42, 'only good news').lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets(['good news and bad news', 'only good news'], 'index', 'Good News').lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', 'Good News', ['good news and bad news', 'only good news']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', 'Good News', {}, ['good news and bad news', 'only good news']).lex)
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', 42, 'only good news').lex)
 
     def test_wrong_options_param(self):
         wrong_param_snippet_options = {'before_match': '<strong>',
                                        'aftermatch': '</strong>',
                                        }
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', data=['only good news'], query='Good News', options=wrong_param_snippet_options).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', data=['only good news'],
+                                                                                 query='Good News',
+                                                                                 options=wrong_param_snippet_options).lex)
 
         wrong_value_snippet_options = {'allow_empty': 12}
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', data=['only good news'], query='Good News', options=wrong_value_snippet_options).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', data=['only good news'],
+                                                                                 query='Good News',
+                                                                                 options=wrong_value_snippet_options).lex)
 
         wrong_value_snippet_options = {'html_strip_mode': 'wrong_mode'}
-        with self.assertRaises(SphinxQLSyntaxException):
-            SXQLSnippets('index', data=['only good news'], query='Good News', options=wrong_value_snippet_options).lex
+        self.assertRaises(SphinxQLSyntaxException, lambda: SXQLSnippets('index', data=['only good news'],
+                                                                                 query='Good News',
+                                                                                 options=wrong_value_snippet_options).lex)
 
     def test_quotes_escaping(self):
         sxql_inst_1 = SXQLSnippets('index', data=["only l'amour", "l'oreal"], query="L'amour")
