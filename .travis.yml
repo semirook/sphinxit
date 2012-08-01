@@ -3,6 +3,9 @@ python:
   - "2.6"
   - "2.7"
 script: nosetests
+install:
+  # I use unittest2 for tests
+  - "if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi"
 notifications:
   email:
     - semirook@gmail.com
