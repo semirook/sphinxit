@@ -15,7 +15,6 @@ class TestSQLConnector(TestCase):
 
 class TestSQLProcessor(TestCase):
 
-    @patch.object(SphinxConnector, 'connect', Mock())
     def setUp(self):
         self.SphinxSearch = SphinxConnector()
 
@@ -148,7 +147,6 @@ class TestSQLProcessor(TestCase):
 
 class TestSnippets(TestCase):
 
-    @patch.object(SphinxConnector, 'connect', Mock())
     def setUp(self):
         self.SphinxSearch = SphinxConnector()
 
