@@ -34,27 +34,27 @@ class DBOperations(object):
             raise ImproperlyConfigured('Cannot connect to Sphinx without defined host and port.')
 
         try:
-            self.conn = mysql.connect(host=self.host, port=self.port, use_unicode=True, charset='utf8')
+            self.connection = mysql.connect(host=self.host, port=self.port, use_unicode=True, charset='utf8')
         except mysql.DatabaseError:
             raise SphinxQLDriverException('Cannot connect to Sphinx via SphinxQL connection.')
 
-        return self.conn
+        return self.connection
 
     def close_connection(self):
-        if hasattr(self, 'conn', False):
-            self.conn.close()
+        if hasattr(self, 'connection'):
+            self.connection.close()
             return True
         else:
             return False
 
     def get_data(self, sql_query):
-        conn = self.get_connection()
+        connection = self.get_connection()
         try:
-            conn.query(sql_query.encode('utf-8'))
+            connection.query(sql_query.encode('utf-8'))
         except mysql.DatabaseError:
             raise SphinxQLSyntaxException(u'Cannot process query: {0}.'.format(sql_query))
 
-        result = conn.store_result().fetch_row(maxrows=0, how=1)
+        result = connection.store_result().fetch_row(maxrows=0, how=1)
         self.close_connection()
 
         return result
