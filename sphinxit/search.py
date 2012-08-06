@@ -24,7 +24,37 @@ from core.lexemes import SXQLSnippets
 class DBOperations(object):
     """Common set of methods for fetching index data by raw SphinxQL query"""
 
-    def get_data(self, sql_query, connection):
+    def __init__(self):
+        self.host = None
+        self.port = None
+        self.__local = threading.local()
+        self._conn_lock = threading.Lock()
+
+    def connect(self):
+        with self._conn_lock:
+            if mysql is None:
+                raise ImproperlyConfigured('I need MySQLdb.')
+            if not self.host or not self.port:
+                raise ImproperlyConfigured('Cannot connect to Sphinx without defined host and port.')
+            try:
+                self.__local.conn = mysql.connect(host=self.host, port=self.port, use_unicode=True, charset='utf8')
+                self.__local.closed = False
+            except mysql.DatabaseError:
+                raise SphinxQLDriverException('Cannot connect to Sphinx via SphinxQL connection.')
+
+    def get_connection(self):
+        if not hasattr(self.__local, 'closed') or self.__local.closed:
+            self.connect()
+
+        return self.__local.conn
+
+    def close_connection(self):
+        with self._conn_lock:
+            self.__local.conn.close()
+            self.__local.closed = True
+
+    def get_data(self, sql_query):
+        connection = self.get_connection()
         try:
             connection.query(sql_query.encode('utf-8'))
         except mysql.DatabaseError:
@@ -32,9 +62,9 @@ class DBOperations(object):
 
         return connection.store_result().fetch_row(maxrows=0, how=1)
 
-    def get_meta_info(self, connection):
+    def get_meta_info(self):
         sxql_query = "SHOW META"
-        result = self.get_data(sxql_query, connection)
+        result = self.get_data(sxql_query)
         info = dict([(x['Variable_name'], x['Value']) for x in result])
 
         return info
@@ -80,32 +110,9 @@ class SphinxConnector(object):
     """
 
     def __init__(self, **kwargs):
-        default_connection = {'host': '127.0.0.1', 'port': 9306}
-        self.host = kwargs.get('host', default_connection['host'])
-        self.port = kwargs.get('port', default_connection['port'])
-        self.__local = threading.local()
-        self._conn_lock = threading.Lock()
-
-    def connect(self):
-        with self._conn_lock:
-            if mysql is None:
-                raise ImproperlyConfigured('I need MySQLdb.')
-            try:
-                self.__local.conn = mysql.connect(host=self.host, port=self.port, use_unicode=True, charset='utf8')
-                self.__local.closed = False
-            except mysql.DatabaseError:
-                raise SphinxQLDriverException('Cannot connect to Sphinx via SphinxQL connection.')
-
-    def get_connection(self):
-        if not hasattr(self.__local, 'closed') or self.__local.closed:
-            self.connect()
-
-        return self.__local.conn
-
-    def close_connection(self):
-        with self._conn_lock:
-            self.__local.conn.close()
-            self.__local.closed = True
+        default_params = {'host': '127.0.0.1', 'port': 9306}
+        self.host = kwargs.get('host', default_params['host'])
+        self.port = kwargs.get('port', default_params['port'])
 
     def __call__(self, *args):
         return self.Index(*args)
@@ -120,7 +127,8 @@ class SphinxConnector(object):
         :param args: Sphinx index name or several indexes, separated with comma.
         """
         new_constructor = SphinxSearch
-        new_constructor.connection = self.get_connection()
+        new_constructor.host = self.host
+        new_constructor.port = self.port
 
         return new_constructor(*args)
 
@@ -136,7 +144,8 @@ class SphinxConnector(object):
         :param query: the full-text query to build snippets for
         """
         new_constructor = SphinxSnippets
-        new_constructor.connection = self.get_connection()
+        new_constructor.host = self.host
+        new_constructor.port = self.port
 
         return new_constructor(index, data, query)
 
@@ -161,14 +170,12 @@ class SphinxSnippets(DBOperations):
     """
 
     def __init__(self, index, data, query):
+        DBOperations.__init__(self)
+
         self._index = index
         self._data = data
         self._query = query
         self._options = {}
-
-    @property
-    def connection(self):
-        raise NotImplementedError('Attach SphinxQL connection to process the query.')
 
     def get_sxql(self):
         """
@@ -216,7 +223,7 @@ class SphinxSnippets(DBOperations):
         Returns the list of snippets or single string if it`s the only.
         """
         sxql = self.get_sxql()
-        result = self.get_data(sxql, self.connection)
+        result = self.get_data(sxql)
         snippets = [x['snippet'] for x in result if x]
 
         self.close_connection()
@@ -245,9 +252,9 @@ class SphinxSearch(SphinxSearchBase, DBOperations):
     :param args: Sphinx index name or several indexes, separated with comma.
     """
 
-    @property
-    def connection(self):
-        raise NotImplementedError('Attach SphinxQL connection to process the query.')
+    def __init__(self, *args):
+        DBOperations.__init__(self)
+        SphinxSearchBase.__init__(self, *args)
 
     def process(self):
         """
@@ -274,8 +281,8 @@ class SphinxSearch(SphinxSearchBase, DBOperations):
         Raises :exc:`SphinxQLSyntaxException` if can't process query for some reasons.
         """
         sxql = self.get_sxql()
-        context = {'result': self.get_data(sxql, self.connection),
-                   'meta': self.get_meta_info(self.connection)}
+        context = {'result': self.get_data(sxql),
+                   'meta': self.get_meta_info()}
 
         self.close_connection()
 
