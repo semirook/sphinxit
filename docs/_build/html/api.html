@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>API &mdash; Sphinxit 0.1 documentation</title>
+    <title>API &mdash; Sphinxit 0.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1',
+        VERSION:     '0.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Sphinxit 0.1 documentation" href="index.html" />
+    <link rel="top" title="Sphinxit 0.1.2 documentation" href="index.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
     <link rel="prev" title="Integration" href="integration.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="integration.html" title="Integration"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Sphinxit 0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Sphinxit 0.1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -101,20 +101,8 @@ via different ports if you whant to:</p>
 <span class="n">another_results</span> <span class="o">=</span> <span class="n">SpecificSphinxit</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;Hello!&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 </pre></div>
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><strong>SphinxQLDriverException</strong> &#8211; if can&#8217;t connect to the <tt class="docutils literal"><span class="pre">searchd</span></tt> for some reasons.</li>
-<li><strong>ImproperlyConfigured</strong> &#8211; if <tt class="docutils literal"><span class="pre">MySQLdb</span></tt> package is not installed.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
 <p><cite>SphinxConnector</cite> provides simple instance constructors for <a class="reference internal" href="#sphinxit.search.SphinxSearch" title="sphinxit.search.SphinxSearch"><tt class="xref py py-class docutils literal"><span class="pre">SphinxSearch</span></tt></a> and <a class="reference internal" href="#sphinxit.search.SphinxSnippets" title="sphinxit.search.SphinxSnippets"><tt class="xref py py-class docutils literal"><span class="pre">SphinxSnippets</span></tt></a>
-and attaches proper <tt class="xref py py-attr docutils literal"><span class="pre">connection</span></tt> to them:</p>
+and attaches proper connector to them:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
 <span class="n">search_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;Hello!&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
 <span class="n">snippets_results</span> <span class="o">=</span> <span class="n">Sphinxit</span><span class="o">.</span><span class="n">Snippets</span><span class="p">(</span><span class="s">&#39;some_index&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;hello world&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;hello&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
@@ -159,30 +147,6 @@ and attaches proper <tt class="xref py py-attr docutils literal"><span class="pr
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="sphinxit.search.SphinxConnector.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxConnector.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Closes SphinxQL connection. There is no necessity to do it manually.
-For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
-<span class="n">Sphinxit</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="sphinxit.search.SphinxConnector.connect">
-<tt class="descname">connect</tt><big>(</big><big>)</big><a class="headerlink" href="#sphinxit.search.SphinxConnector.connect" title="Permalink to this definition">¶</a></dt>
-<dd><p>There is no necessity to connect manually but in some rare cases you may need to.
-For example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Sphinxit</span> <span class="o">=</span> <span class="n">SphinxConnector</span><span class="p">()</span>
-<span class="n">Sphinxit</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="n">Sphinxit</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">9350</span>
-<span class="n">Sphinxit</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-</pre></div>
-</div>
 </dd></dl>
 
 </dd></dl>
@@ -666,7 +630,7 @@ Returns the list of snippets or single string if it`s the only.</p>
         <li class="right" >
           <a href="integration.html" title="Integration"
              >previous</a> |</li>
-        <li><a href="index.html">Sphinxit 0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Sphinxit 0.1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

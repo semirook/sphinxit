@@ -4,6 +4,12 @@ Changelog
 =========
 
 
+Version 0.1.2 (2012-08-06)
+--------------------------
+
+* Connection on demand only (on the .process() execution).
+* Threaded connections and locks.
+
 Version 0.1.1 (2012-07-31)
 --------------------------
 
