@@ -55,7 +55,6 @@ class DBOperations(object):
             raise SphinxQLSyntaxException(u'Cannot process query: {0}.'.format(sql_query))
 
         result = connection.store_result().fetch_row(maxrows=0, how=1)
-        self.close_connection()
 
         return result
 
@@ -220,6 +219,8 @@ class SphinxSnippets(DBOperations):
         result = self.get_data(self.get_sxql())
         snippets = [x['snippet'] for x in result if x]
 
+        self.close_connection()
+
         return snippets[0] if len(snippets) == 1 else snippets
 
 
@@ -269,5 +270,9 @@ class SphinxSearch(SphinxSearchBase, DBOperations):
         Raises :exc:`SphinxQLSyntaxException` if can't process query for some reasons.
         """
         sxql = self.get_sxql()
-        return {'result': self.get_data(sxql),
-                'meta': self.get_meta_info()}
+        context = {'result': self.get_data(sxql),
+                   'meta': self.get_meta_info()}
+
+        self.close_connection()
+
+        return context
