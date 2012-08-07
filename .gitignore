@@ -1,8 +1,9 @@
 /build
 /dist
+/docs/_build
 *.egg-info
 *.egg
 *.pyc
 .DS_Store
-sphinxit.sublime-*
 .noseids
+sphinxit.sublime-*
