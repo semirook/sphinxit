@@ -24,10 +24,11 @@ from core.lexemes import SXQLSnippets
 class DBOperations(object):
     """Common set of methods for fetching index data by raw SphinxQL query"""
 
+    _conn_options = None
+
     def __init__(self):
         self.__local = threading.local()
         self._conn_lock = threading.Lock()
-        self._conn_options = None
 
     def connect(self):
         with self._conn_lock:
