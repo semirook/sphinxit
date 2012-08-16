@@ -24,21 +24,19 @@ from core.lexemes import SXQLSnippets
 class DBOperations(object):
     """Common set of methods for fetching index data by raw SphinxQL query"""
 
-    host = None
-    port = None
-
     def __init__(self):
         self.__local = threading.local()
         self._conn_lock = threading.Lock()
+        self._conn_options = None
 
     def connect(self):
         with self._conn_lock:
             if mysql is None:
                 raise ImproperlyConfigured('I need MySQLdb.')
-            if not self.host or not self.port:
-                raise ImproperlyConfigured('Cannot connect to Sphinx without defined host and port.')
+            if not self._conn_options:
+                raise ImproperlyConfigured('Cannot connect to Sphinx without defined connection parameters.')
             try:
-                self.__local.conn = mysql.connect(host=self.host, port=self.port, use_unicode=True, charset='utf8')
+                self.__local.conn = mysql.connect(**self._conn_options)
                 self.__local.closed = False
             except mysql.DatabaseError:
                 raise SphinxQLDriverException('Cannot connect to Sphinx via SphinxQL connection.')
@@ -110,10 +108,14 @@ class SphinxConnector(object):
         snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
     """
 
-    def __init__(self, **kwargs):
-        default_params = {'host': '127.0.0.1', 'port': 9306}
-        self.host = kwargs.get('host', default_params['host'])
-        self.port = kwargs.get('port', default_params['port'])
+    def __init__(self, **options):
+        default_options = {'host': '127.0.0.1',
+                           'port': 9306,
+                           'use_unicode': True,
+                           'charset': 'utf8',
+                           }
+        self._conn_options = default_options
+        self._conn_options.update(options)
 
     def __call__(self, *args):
         return self.Index(*args)
@@ -128,8 +130,7 @@ class SphinxConnector(object):
         :param args: Sphinx index name or several indexes, separated with comma.
         """
         new_constructor = SphinxSearch
-        new_constructor.host = self.host
-        new_constructor.port = self.port
+        new_constructor._conn_options = self._conn_options
 
         return new_constructor(*args)
 
@@ -145,8 +146,7 @@ class SphinxConnector(object):
         :param query: the full-text query to build snippets for
         """
         new_constructor = SphinxSnippets
-        new_constructor.host = self.host
-        new_constructor.port = self.port
+        new_constructor._conn_options = self._conn_options
 
         return new_constructor(index, data, query)
 
