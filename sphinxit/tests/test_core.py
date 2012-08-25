@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 from unittest import TestCase
 from ..core.lexemes import (SXQLSelect, SXQLFrom, SXQLLimit, SXQLOrder,
                             SXQLGroupBy, SXQLWithinGroupOrderBy,
@@ -11,15 +13,15 @@ class TestSXQLSelect(TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLSelect()
-        self.assertEqual(sxql_inst.lex, u'SELECT *')
+        self.assertEqual(sxql_inst.lex, 'SELECT *')
 
         sxql_inst('title', 'name')
-        self.assertEqual(sxql_inst.lex, u'SELECT title, name')
+        self.assertEqual(sxql_inst.lex, 'SELECT title, name')
 
     def test_duplicate_args(self):
         sxql_inst = SXQLSelect()
         sxql_inst('title', 'title', 'name')
-        self.assertEqual(sxql_inst.lex, u'SELECT title, name')
+        self.assertEqual(sxql_inst.lex, 'SELECT title, name')
 
     def test_wrong_args(self):
         sxql_inst_1 = SXQLSelect()
@@ -34,15 +36,15 @@ class TestSXQLFrom(TestCase):
     def test_initial(self):
         sxql_inst = SXQLFrom()
         sxql_inst('index')
-        self.assertEqual(sxql_inst.lex, u'FROM index')
+        self.assertEqual(sxql_inst.lex, 'FROM index')
 
         sxql_inst('delta_index')
-        self.assertEqual(sxql_inst.lex, u'FROM index, delta_index')
+        self.assertEqual(sxql_inst.lex, 'FROM index, delta_index')
 
     def test_duplicate_args(self):
         sxql_inst = SXQLFrom()
         sxql_inst('index', 'index', 'delta_index')
-        self.assertEqual(sxql_inst.lex, u'FROM index, delta_index')
+        self.assertEqual(sxql_inst.lex, 'FROM index, delta_index')
 
     def test_wrong_args(self):
         sxql_inst_1 = SXQLFrom()
@@ -56,10 +58,10 @@ class TestSXQLLimit(TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLLimit()
-        self.assertEqual(sxql_inst.lex, u'LIMIT 0,1000')
+        self.assertEqual(sxql_inst.lex, 'LIMIT 0,1000')
 
         sxql_inst(10, 20)
-        self.assertEqual(sxql_inst.lex, u'LIMIT 10,20')
+        self.assertEqual(sxql_inst.lex, 'LIMIT 10,20')
 
     def test_unique_call(self):
         sxql_inst = SXQLLimit()
@@ -85,10 +87,10 @@ class TestSXQLOrder(TestCase):
     def test_initial(self):
         sxql_inst = SXQLOrder()
         sxql_inst('title', 'ASC')
-        self.assertEqual(sxql_inst.lex, u'ORDER BY title ASC')
+        self.assertEqual(sxql_inst.lex, 'ORDER BY title ASC')
 
         sxql_inst('name', 'desc')
-        self.assertEqual(sxql_inst.lex, u'ORDER BY title ASC, name DESC')
+        self.assertEqual(sxql_inst.lex, 'ORDER BY title ASC, name DESC')
 
     def test_wrong_attrs(self):
         sxql_inst_1 = SXQLOrder()
@@ -109,7 +111,7 @@ class TestSXQLGroupBy(TestCase):
     def test_initial(self):
         sxql_inst = SXQLGroupBy()
         sxql_inst('name')
-        self.assertEqual(sxql_inst.lex, u'GROUP BY name')
+        self.assertEqual(sxql_inst.lex, 'GROUP BY name')
 
     def test_wrong_attrs(self):
         sxql_inst_1 = SXQLGroupBy()
@@ -128,7 +130,7 @@ class TestSXQLWithinGroupOrderBy(TestCase):
     def test_initial(self):
         sxql_inst = SXQLWithinGroupOrderBy()
         sxql_inst('name', 'asc')
-        self.assertEqual(sxql_inst.lex, u'WITHIN GROUP ORDER BY name ASC')
+        self.assertEqual(sxql_inst.lex, 'WITHIN GROUP ORDER BY name ASC')
 
     def test_unique_call(self):
         sxql_inst = SXQLWithinGroupOrderBy()
@@ -144,34 +146,34 @@ class TestSXQLFilter(TestCase):
 
     def test_initial(self):
         where_def_1 = SXQLFilter()(id__eq=1)
-        self.assertEqual(where_def_1.lex, u'id=1')
+        self.assertEqual(where_def_1.lex, 'id=1')
 
         where_def_2 = SXQLFilter()(id__gt=1)
-        self.assertEqual(where_def_2.lex, u'id>1')
+        self.assertEqual(where_def_2.lex, 'id>1')
 
         where_def_3 = SXQLFilter()(id__gte=1)
-        self.assertEqual(where_def_3.lex, u'id>=1')
+        self.assertEqual(where_def_3.lex, 'id>=1')
 
         where_def_4 = SXQLFilter()(id__lt=1)
-        self.assertEqual(where_def_4.lex, u'id<1')
+        self.assertEqual(where_def_4.lex, 'id<1')
 
         where_def_5 = SXQLFilter()(id__lte=1)
-        self.assertEqual(where_def_5.lex, u'id<=1')
+        self.assertEqual(where_def_5.lex, 'id<=1')
 
         where_def_6 = SXQLFilter()(id__in=[1, 2])
-        self.assertEqual(where_def_6.lex, u'id IN (1,2)')
+        self.assertEqual(where_def_6.lex, 'id IN (1,2)')
 
         where_def_7 = SXQLFilter()(id__between=[1, 5])
-        self.assertEqual(where_def_7.lex, u'id BETWEEN 1 AND 5')
+        self.assertEqual(where_def_7.lex, 'id BETWEEN 1 AND 5')
 
         where_def_8 = SXQLFilter()(e__eq=15)
-        self.assertEqual(where_def_8.lex, u'e=15')
+        self.assertEqual(where_def_8.lex, 'e=15')
 
         where_def_9 = SXQLFilter()(id__in=['2', '4', 5])
-        self.assertEqual(where_def_9.lex, u'id IN (2,4,5)')
+        self.assertEqual(where_def_9.lex, 'id IN (2,4,5)')
 
         where_def_10 = SXQLFilter()(id__neq=3)
-        self.assertEqual(where_def_10.lex, u'id!=3')
+        self.assertEqual(where_def_10.lex, 'id!=3')
 
         more_where_defs = SXQLFilter()(id__eq=1, att1__lt=1, att2__between=[1, 5])
         results = ('id=1 AND att2 BETWEEN 1 AND 5 AND att1<1',
@@ -199,28 +201,28 @@ class TestSXQLMatch(TestCase):
     def test_initial(self):
         sxql_inst = SXQLMatch()
         sxql_inst('Find me some money')
-        self.assertEqual(sxql_inst.lex, u"MATCH('Find me some money')")
+        self.assertEqual(sxql_inst.lex, "MATCH('Find me some money')")
 
     def test_match_join_and_escape(self):
         sxql_inst = SXQLMatch()
         sxql_inst('@full_name ^Roman')
         sxql_inst('@full_name Semirook$')
-        self.assertEqual(sxql_inst.lex, ur"MATCH('\\@full_name \\^Roman \\@full_name Semirook\\$')")
+        self.assertEqual(sxql_inst.lex, r"MATCH('\\@full_name \\^Roman \\@full_name Semirook\\$')")
 
     def test_quotes_escape(self):
         sxql_inst = SXQLMatch()
         sxql_inst('"name')
-        self.assertEqual(sxql_inst.lex, ur"MATCH('{0}')".format(r'\\"name'))
+        self.assertEqual(sxql_inst.lex, r"MATCH('{0}')".format(r'\\"name'))
 
         sxql_inst_2 = SXQLMatch()
         sxql_inst_2("l'amour")
-        self.assertEqual(sxql_inst_2.lex, ur"MATCH('lamour')")
+        self.assertEqual(sxql_inst_2.lex, r"MATCH('lamour')")
 
     def test_unescaped_query(self):
         sxql_inst = SXQLMatch()
         mail_query = '@email "semirook@gmail.com"'
         sxql_inst(mail_query, escape=False)
-        self.assertEqual(sxql_inst.lex, u"MATCH('{0}')".format(mail_query))
+        self.assertEqual(sxql_inst.lex, "MATCH('{0}')".format(mail_query))
 
     def test_wrong_query(self):
         sxql_inst = SXQLMatch()
@@ -248,10 +250,10 @@ class TestSXQLORFilter(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = SXQLORFilter()(Q(id__eq=1) | Q(id__gte=5))
-        self.assertEqual(sxql_inst_1.lex, u'(id=1) OR (id>=5) AS cnd')
+        self.assertEqual(sxql_inst_1.lex, '(id=1) OR (id>=5) AS cnd')
 
         sxql_inst_2 = SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5))
-        self.assertEqual(sxql_inst_2.lex, u'(id=1) AND (id>=5) AS cnd')
+        self.assertEqual(sxql_inst_2.lex, '(id=1) AND (id>=5) AS cnd')
 
         sxql_inst_3 = SXQLORFilter()(Q(id__eq=1) & (Q(id__gte=5) | Q(id__lt=4)))
         results_3 = ["(id>=5) OR (id<4) AND (id=1) AS cnd",
@@ -268,7 +270,7 @@ class TestSXQLORFilter(TestCase):
 
     def test_wrong_attrs(self):
         sxql_inst_1 = SXQLORFilter()(Q(id__eq=1) + Q(id__gte=5))
-        self.assertEqual(sxql_inst_1.lex, u'(id=1) AND (id>=5) AS cnd')
+        self.assertEqual(sxql_inst_1.lex, '(id=1) AND (id>=5) AS cnd')
         self.assertRaises(SphinxQLSyntaxException, lambda: SXQLORFilter()(Q(id__eq=1) & Q(id__gte=5) | Q(counter__between=[1, 5])).lex)
 
 
@@ -276,16 +278,16 @@ class TestCount(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = Count()
-        self.assertEqual(sxql_inst_1.lex, u'COUNT(*) AS num')
+        self.assertEqual(sxql_inst_1.lex, 'COUNT(*) AS num')
 
         sxql_inst_2 = Count('counter')
-        self.assertEqual(sxql_inst_2.lex, u'COUNT(DISTINCT counter) AS counter_count')
+        self.assertEqual(sxql_inst_2.lex, 'COUNT(DISTINCT counter) AS counter_count')
 
         sxql_inst_3 = Count('counter', 'my_alias')
-        self.assertEqual(sxql_inst_3.lex, u'COUNT(DISTINCT counter) AS my_alias')
+        self.assertEqual(sxql_inst_3.lex, 'COUNT(DISTINCT counter) AS my_alias')
 
         sxql_inst_4 = Count(alias='my_alias')
-        self.assertEqual(sxql_inst_4.lex, u'COUNT(*) AS my_alias')
+        self.assertEqual(sxql_inst_4.lex, 'COUNT(*) AS my_alias')
 
     def test_wrong_attr(self):
         self.assertRaises(SphinxQLSyntaxException, lambda: Count(['counter']).lex)
@@ -296,10 +298,10 @@ class TestAvg(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = Avg('price')
-        self.assertEqual(sxql_inst_1.lex, u'AVG(price) AS price_avg')
+        self.assertEqual(sxql_inst_1.lex, 'AVG(price) AS price_avg')
 
         sxql_inst_2 = Avg('price', 'price_mid')
-        self.assertEqual(sxql_inst_2.lex, u'AVG(price) AS price_mid')
+        self.assertEqual(sxql_inst_2.lex, 'AVG(price) AS price_mid')
 
     def test_wrong_attr(self):
         self.assertRaises(SphinxQLSyntaxException, lambda: Avg(['counter']).lex)
@@ -310,10 +312,10 @@ class TestMin(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = Min('price')
-        self.assertEqual(sxql_inst_1.lex, u'MIN(price) AS price_min')
+        self.assertEqual(sxql_inst_1.lex, 'MIN(price) AS price_min')
 
         sxql_inst_2 = Min('price', 'minimal')
-        self.assertEqual(sxql_inst_2.lex, u'MIN(price) AS minimal')
+        self.assertEqual(sxql_inst_2.lex, 'MIN(price) AS minimal')
 
     def test_wrong_attr(self):
         self.assertRaises(SphinxQLSyntaxException, lambda: Min(['price']).lex)
@@ -324,10 +326,10 @@ class TestMax(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = Max('price')
-        self.assertEqual(sxql_inst_1.lex, u'MAX(price) AS price_max')
+        self.assertEqual(sxql_inst_1.lex, 'MAX(price) AS price_max')
 
         sxql_inst_2 = Max('price', 'maximum')
-        self.assertEqual(sxql_inst_2.lex, u'MAX(price) AS maximum')
+        self.assertEqual(sxql_inst_2.lex, 'MAX(price) AS maximum')
 
     def test_wrong_attr(self):
         self.assertRaises(SphinxQLSyntaxException, lambda: Max(['price']).lex)
@@ -337,10 +339,10 @@ class TestSum(TestCase):
 
     def test_basics(self):
         sxql_inst_1 = Sum('counter')
-        self.assertEqual(sxql_inst_1.lex, u'SUM(counter) AS counter_sum')
+        self.assertEqual(sxql_inst_1.lex, 'SUM(counter) AS counter_sum')
 
         sxql_inst_2 = Sum('counter', 'summary')
-        self.assertEqual(sxql_inst_2.lex, u'SUM(counter) AS summary')
+        self.assertEqual(sxql_inst_2.lex, 'SUM(counter) AS summary')
 
     def test_wrong_attr(self):
         self.assertRaises(SphinxQLSyntaxException, lambda: Sum(['counter']).lex)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
     sphinxit.search
     ~~~~~~~~~~~~~~~
@@ -10,15 +8,18 @@
     :license: BSD, see LICENSE for more details.
 """
 
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 try:
     import MySQLdb as mysql
 except ImportError:
     mysql = None
 
 import threading
-from core.exceptions import SphinxQLDriverException, SphinxQLSyntaxException, ImproperlyConfigured
-from core.processor import SphinxSearchBase
-from core.lexemes import SXQLSnippets
+from .core.exceptions import SphinxQLDriverException, SphinxQLSyntaxException, ImproperlyConfigured
+from .core.processor import SphinxSearchBase
+from .core.lexemes import SXQLSnippets
 
 
 class DBOperations(object):
@@ -58,7 +59,7 @@ class DBOperations(object):
         try:
             connection.query(sql_query.encode('utf-8'))
         except mysql.DatabaseError:
-            raise SphinxQLSyntaxException(u'Cannot process query: {0}.'.format(sql_query))
+            raise SphinxQLSyntaxException('Cannot process query: {0}.'.format(sql_query))
 
         return connection.store_result().fetch_row(maxrows=0, how=1)
 

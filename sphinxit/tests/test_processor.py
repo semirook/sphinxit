@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 from unittest import TestCase
-from mock import patch, Mock
 from ..search import SphinxConnector, SphinxSearch, SphinxSnippets
 from ..core.exceptions import SphinxQLSyntaxException, ImproperlyConfigured
 from ..core.lexemes import Q, Avg, Count
@@ -24,54 +25,54 @@ class TestSQLProcessor(TestCase):
 
     def test_basic_query(self):
         a = self.SphinxSearch('index').get_sxql()
-        self.assertEqual(a, u'SELECT * FROM index')
+        self.assertEqual(a, 'SELECT * FROM index')
 
         b = self.SphinxSearch('index', 'index_delta').get_sxql()
-        self.assertEqual(b, u'SELECT * FROM index, index_delta')
+        self.assertEqual(b, 'SELECT * FROM index, index_delta')
 
         self.assertRaises(SphinxQLSyntaxException, self.SphinxSearch)
 
     def test_select(self):
         a = self.SphinxSearch('index').select('id').get_sxql()
-        self.assertEqual(a, u'SELECT id FROM index')
+        self.assertEqual(a, 'SELECT id FROM index')
 
         b = self.SphinxSearch('index').select('id').select('title').get_sxql()
-        self.assertEqual(b, u'SELECT id, title FROM index')
+        self.assertEqual(b, 'SELECT id, title FROM index')
 
         c = self.SphinxSearch('index').select(Avg('price')).select('title').get_sxql()
-        self.assertEqual(c, u'SELECT title, AVG(price) AS price_avg FROM index')
+        self.assertEqual(c, 'SELECT title, AVG(price) AS price_avg FROM index')
 
     def test_order_by(self):
         a = self.SphinxSearch('index').order_by('title', 'asc').get_sxql()
-        self.assertEqual(a, u'SELECT * FROM index ORDER BY title ASC')
+        self.assertEqual(a, 'SELECT * FROM index ORDER BY title ASC')
 
         b = self.SphinxSearch('index').order_by('title', 'asc').order_by('name', 'desc').get_sxql()
-        self.assertEqual(b, u'SELECT * FROM index ORDER BY title ASC, name DESC')
+        self.assertEqual(b, 'SELECT * FROM index ORDER BY title ASC, name DESC')
 
     def test_limit(self):
         a = self.SphinxSearch('index').limit(0, 20).get_sxql()
-        self.assertEqual(a, u'SELECT * FROM index LIMIT 0,20')
+        self.assertEqual(a, 'SELECT * FROM index LIMIT 0,20')
 
         self.assertRaises(SphinxQLSyntaxException, lambda: self.SphinxSearch('index').limit(0, 200).limit(10, 60).get_sxql())
 
     def test_group_by(self):
         a = self.SphinxSearch('index').group_by('title').get_sxql()
-        self.assertEqual(a, u'SELECT * FROM index GROUP BY title')
+        self.assertEqual(a, 'SELECT * FROM index GROUP BY title')
 
         b = self.SphinxSearch('index').group_by().get_sxql()
-        self.assertEqual(b, u'SELECT * FROM index')
+        self.assertEqual(b, 'SELECT * FROM index')
 
         self.assertRaises(SphinxQLSyntaxException, lambda: self.SphinxSearch('index').group_by('title').group_by('name').get_sxql())
 
     def test_cluster(self):
         a = self.SphinxSearch('index').cluster('title').get_sxql()
-        self.assertEqual(a, u'SELECT *, COUNT(*) AS num FROM index GROUP BY title')
+        self.assertEqual(a, 'SELECT *, COUNT(*) AS num FROM index GROUP BY title')
 
         b = self.SphinxSearch('index').cluster('title', alias='same_titles').get_sxql()
-        self.assertEqual(b, u'SELECT *, COUNT(*) AS same_titles FROM index GROUP BY title')
+        self.assertEqual(b, 'SELECT *, COUNT(*) AS same_titles FROM index GROUP BY title')
 
         c = self.SphinxSearch('index').cluster().get_sxql()
-        self.assertEqual(c, u'SELECT * FROM index')
+        self.assertEqual(c, 'SELECT * FROM index')
 
         d = self.SphinxSearch('index').select(Count()).group_by('title').get_sxql()
         self.assertEqual(a, d)
@@ -80,7 +81,7 @@ class TestSQLProcessor(TestCase):
 
     def test_within_group_order_by(self):
         a = self.SphinxSearch('index').within_group_order_by('title', 'ASC').get_sxql()
-        self.assertEqual(a, u'SELECT * FROM index WITHIN GROUP ORDER BY title ASC')
+        self.assertEqual(a, 'SELECT * FROM index WITHIN GROUP ORDER BY title ASC')
 
         self.assertRaises(SphinxQLSyntaxException, lambda: self.SphinxSearch('index').within_group_order_by('title', 'ASC').within_group_order_by('name', 'DESC').get_sxql())
 
@@ -162,4 +163,4 @@ class TestSnippets(TestCase):
 
     def test_options(self):
         query = self.SphinxSearch.Snippets('index', ['only good news', 'news'], 'Good News').options(**{'limit': 320})
-        self.assertEqual(query.get_sxql(), u"CALL SNIPPETS(('only good news', 'news'), 'index', 'Good News', 320 AS limit)")
+        self.assertEqual(query.get_sxql(), "CALL SNIPPETS(('only good news', 'news'), 'index', 'Good News', 320 AS limit)")

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
     sphinxit.search
     ~~~~~~~~~~~~~~~
@@ -10,9 +8,14 @@
     :license: BSD, see LICENSE for more details.
 """
 
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 import itertools
-from exceptions import SphinxQLSyntaxException, SphinxQLChainException
-from lexemes import (SXQLSelect, SXQLFrom, SXQLMatch, SXQLWhere, SXQLOrder, SXQLLimit, SXQLGroupBy,
+from six.moves import reduce
+
+from .exceptions import SphinxQLSyntaxException, SphinxQLChainException
+from .lexemes import (SXQLSelect, SXQLFrom, SXQLMatch, SXQLWhere, SXQLOrder, SXQLLimit, SXQLGroupBy,
                      SXQLWithinGroupOrderBy, SXQLFilter, SXQLORFilter, Count)
 
 
@@ -329,7 +332,7 @@ class SphinxSearchBase(SphinxSearchActionMethods):
                 pass
 
         if bingo:
-            return u' '.join([x.lex for x in bingo])  # this is our result SphinxQL expression
+            return ' '.join([x.lex for x in bingo])  # this is our result SphinxQL expression
         else:
             raise SphinxQLSyntaxException('Cannot process correct SphinxQL expression')
 
