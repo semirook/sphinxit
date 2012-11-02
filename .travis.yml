@@ -3,6 +3,7 @@ python:
   - "2.6"
   - "2.7"
   - "3.2"
+  - "3.3"
 script: nosetests
 install:
   - "pip install -r reqs.pip --use-mirrors"

@@ -12,63 +12,13 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 try:
-    import MySQLdb as mysql
+    import oursql
 except ImportError:
-    mysql = None
+    oursql = None
 
-import threading
-from .core.exceptions import SphinxQLDriverException, SphinxQLSyntaxException, ImproperlyConfigured
+from .core.exceptions import SphinxQLSyntaxException, ImproperlyConfigured
 from .core.processor import SphinxSearchBase
 from .core.lexemes import SXQLSnippets
-
-
-class DBOperations(object):
-    """Common set of methods for fetching index data by raw SphinxQL query"""
-
-    _conn_options = None
-
-    def __init__(self):
-        self.__local = threading.local()
-        self._conn_lock = threading.Lock()
-
-    def connect(self):
-        with self._conn_lock:
-            if mysql is None:
-                raise ImproperlyConfigured('I need MySQLdb.')
-            if not self._conn_options:
-                raise ImproperlyConfigured('Cannot connect to Sphinx without defined connection parameters.')
-            try:
-                self.__local.conn = mysql.connect(**self._conn_options)
-                self.__local.closed = False
-            except mysql.DatabaseError:
-                raise SphinxQLDriverException('Cannot connect to Sphinx via SphinxQL connection.')
-
-    def get_connection(self):
-        if not hasattr(self.__local, 'closed') or self.__local.closed:
-            self.connect()
-
-        return self.__local.conn
-
-    def close_connection(self):
-        with self._conn_lock:
-            self.__local.conn.close()
-            self.__local.closed = True
-
-    def get_data(self, sql_query):
-        connection = self.get_connection()
-        try:
-            connection.query(sql_query.encode('utf-8'))
-        except mysql.DatabaseError:
-            raise SphinxQLSyntaxException('Cannot process query: {0}.'.format(sql_query))
-
-        return connection.store_result().fetch_row(maxrows=0, how=1)
-
-    def get_meta_info(self):
-        sxql_query = "SHOW META"
-        result = self.get_data(sxql_query)
-        info = dict([(x['Variable_name'], x['Value']) for x in result])
-
-        return info
 
 
 class SphinxConnector(object):
@@ -76,7 +26,7 @@ class SphinxConnector(object):
     The start point of your new Sphinx-based search.
     Connects to the ``searchd`` via MySQL interface and this is how SphinxQL actually works,
     it speaks the same language as the MySQL network protocol. So make sure you have
-    ``MySQLdb`` package installed.
+    ``oursql`` package installed.
 
     :param host: ``searchd`` host IP address
     :param port: ``searchd`` port specified in your `sphinx.conf`
@@ -91,50 +41,56 @@ class SphinxConnector(object):
     For example, standard usage is::
 
         Sphinxit = SphinxConnector()
-        search_results = Sphinxit('some_index').match('Hello!').process()
+        search_results = Sphinxit.Search('some_index').match('Hello!').process()
 
     You can have multiple connections to the ``searchd`` with different configurations
-    via different ports if you whant to::
-
-        StandardSphinxit = SphinxConnector()
-        some_results = StandardSphinxit('some_index').match('Hello!').process()
-
-        SpecificSphinxit = SphinxConnector(port=9350)
-        another_results = SpecificSphinxit('some_index').match('Hello!').process()
+    via different ports if you whant to.
 
     `SphinxConnector` provides simple instance constructors for :class:`SphinxSearch` and :class:`SphinxSnippets`
-    and attaches proper connector to them::
+    and binds proper lazy MySQL-connector to them::
 
         Sphinxit = SphinxConnector()
-        search_results = Sphinxit.Index('some_index').match('Hello!').process()
+        search_results = Sphinxit.Search('some_index').match('Hello!').process()
         snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
     """
-
     def __init__(self, **options):
         default_options = {'host': '127.0.0.1',
                            'port': 9306,
-                           'use_unicode': True,
-                           'charset': 'utf8',
                            }
+
         self._conn_options = default_options
         self._conn_options.update(options)
 
-    def __call__(self, *args):
-        return self.Index(*args)
+    def get_connection(self):
+        """
+        Pay attention, I use `oursql`, not `mysqldb` as in the past.
+        `oursql` supports Python 3, more powerful, tiny and well-documented.
 
-    def Index(self, *args):
+        Connection is lazy, only :meth:`process` method calls it to execute some
+        already prepared expressions.
+        """
+        if oursql is None:
+            raise ImproperlyConfigured('Oursql library is needed to work with MySQL protocol.')
+
+        try:
+            return oursql.connect(**self._conn_options)
+        except oursql.InterfaceError as e:
+            errno, msg, extra = e
+            raise SphinxQLSyntaxException(msg)
+
+    def Search(self, *args):
         """
         :class:`SphinxSearch` instance constructor::
 
             Sphinxit = SphinxConnector()
-            search_results = Sphinxit.Index('index', 'delta_index').match('Hello!').process()
+            search_results = Sphinxit.Search('index', 'delta_index').match('Hello!').process()
 
         :param args: Sphinx index name or several indexes, separated with comma.
         """
-        new_constructor = SphinxSearch
-        new_constructor._conn_options = self._conn_options
+        search_inst = SphinxSearch(*args)
+        search_inst._bind_connection(self.get_connection)
 
-        return new_constructor(*args)
+        return search_inst
 
     def Snippets(self, index, data, query):
         """
@@ -147,24 +103,122 @@ class SphinxConnector(object):
         :param data: a string or a list of strings to extract snippets from
         :param query: the full-text query to build snippets for
         """
-        new_constructor = SphinxSnippets
-        new_constructor._conn_options = self._conn_options
+        search_inst = SphinxSnippets(index, data, query)
+        search_inst._bind_connection(self.get_connection)
 
-        return new_constructor(index, data, query)
+        return search_inst
+
+
+class DBOperations(object):
+    """Common set of methods for fetching index data by raw SphinxQL query"""
+
+    def _bind_connection(self, conn):
+        self._conn = conn
+        return self
+
+    def _get_connection(self):
+        connection = getattr(self, '_conn', False)
+        if not connection:
+            raise ImproperlyConfigured('Cannot connect to Sphinx without proper connection.')
+
+        return connection()
+
+    def _get_result(self, sxql_query, with_meta=True, with_status=False):
+        connection = self._get_connection()
+        curs = connection.cursor(oursql.DictCursor)
+        execute_query = lambda sxql_query: curs.execute(sxql_query, plain_query=True)
+        normalize_meta = lambda result: dict([(x['Variable_name'], x['Value']) for x in result])
+        try:
+            execute_query(sxql_query)
+            results = {'result': curs.fetchall()}
+
+            if with_meta:
+                execute_query('SHOW META')
+                meta_result = curs.fetchall()
+                results['meta'] = normalize_meta(meta_result)
+
+            if with_status:
+                execute_query('SHOW STATUS')
+                status_result = curs.fetchall()
+                results['status'] = normalize_meta(status_result)
+
+            return results
+
+        except oursql.ProgrammingError as e:
+            errno, msg, extra = e
+            raise SphinxQLSyntaxException(msg)
+
+        finally:
+            curs.close()
+
+
+class SphinxSearch(SphinxSearchBase, DBOperations):
+    """
+    Implements SphinxQL `SELECT syntax <http://sphinxsearch.com/docs/current.html#sphinxql-select>`_
+    and provides simple and clean way to make full-text queries, filtering, grouping, ordering search results etc.::
+
+        Sphinxit = SphinxConnector()
+        result = Sphinxit.Search('some_index').process()
+
+    To make search by several indexes (you will, if you have main and delta indexes, for example), just separate
+    their names with comma::
+
+        Sphinxit= SphinxConnector()
+        result = Sphinxit.Search('main_index', 'delta_index').process()
+
+    .. note::
+        :class:`SphinxSearch` needs connector to refer to ``searchd``, so you can't actually process
+        query without initializing :class:`SphinxConnector` first.
+
+    :param args: Sphinx index name or several indexes, separated with comma.
+    """
+
+    def process(self, with_meta=True, with_status=False):
+        """
+        Pay attention that query is not processed until you call the :meth:`process` method explicitly.
+        You can dynamically construct as heavy queries as you want and process them only once when you need results,
+        like this::
+
+            ...
+            query = Sphinxit.Search('main_index', 'delta_index').match('Good news')
+
+            if self.request.GET.get('id', False):
+                query.filter(id__eq=self.request.GET['id'])
+            elif self.request.GET.get('country_id', False):
+                query.filter(country_id__eq=self.request.GET['country_id'])
+
+            sphinx_results = query.process()
+            ...
+
+        :param with_meta: make the `SHOW META` subquery to extract some useful meta-information (default is True).
+        :param with_status: make the `SHOW STATUS` subquery to extract performance counters (default is False).
+
+        Returns search results as dictionary with :attr:`result`, :attr:`meta` and :attr:`status` keys.
+        :attr:`result` is actually some search result, a list of dictionaries with documents ids and another attributes;
+        :attr:`meta` is a dictionary with some `additional meta-information
+        <http://sphinxsearch.com/docs/current.html#sphinxql-show-meta>`_ about your query;
+        :attr:`status` is a dictionary with `a number of useful performance counters
+        <http://sphinxsearch.com/docs/current.html#sphinxql-show-status>`_.
+        """
+        return self._get_result(
+            sxql_query=self._ql(),
+            with_meta=with_meta,
+            with_status=with_status,
+        )
 
 
 class SphinxSnippets(DBOperations):
     """
     Implements SphinxQL `CALL SNIPPETS syntax <http://sphinxsearch.com/docs/current.html#sphinxql-call-snippets>`_
-    and supports the full set of `excerpts parameters <http://sphinxsearch.com/docs/current.html#api-func-buildexcerpts>`_.
-    Sphinx doesn`t provide documents fetching by indexes out of the box. You have to do it yourself and pass
+    and supports full set of `excerpts parameters <http://sphinxsearch.com/docs/current.html#api-func-buildexcerpts>`_.
+    Sphinx doesn`t provide documents fetching by indexes. You have to do that yourself and pass
     documents string or strings to extract the snippets from as :attr:`data`. The usage is quite simple::
 
         Sphinxit = SphinxConnector()
         snippets_results = Sphinxit.Snippets('some_index', data='hello world', query='hello').process()
 
     .. note::
-        :class:`SphinxSnippets` needs :attr:`connector` to refer to ``searchd``, so you can't actually process
+        :class:`SphinxSnippets` needs connector to refer to ``searchd``, so you can't actually process
         query without initializing :class:`SphinxConnector` first.
 
     :param index: Sphinx index name
@@ -173,29 +227,23 @@ class SphinxSnippets(DBOperations):
     """
 
     def __init__(self, index, data, query):
-        DBOperations.__init__(self)
-
         self._index = index
         self._data = data
         self._query = query
         self._options = {}
 
-    def get_sxql(self):
+    def _ql(self):
         """
-        Call this method for debugging result SphinxQL query::
+        Call this method for debugging SphinxQL query::
 
-            sxql = Sphinxit.Snippets('index', ['only good news', 'news'], query='Good News').get_sxql()
+            sxql = Sphinxit.Snippets('index', ['only good news', 'news'], query='Good News')._ql()
 
         .. code-block:: sql
 
             CALL SNIPPETS(('only good news', 'news'), 'index', 'Good News')
 
         """
-        return SXQLSnippets(
-            self._index,
-            self._data,
-            self._query,
-            self._options).lex
+        return SXQLSnippets(self._index, self._data, self._query, self._options).lex
 
     def options(self, **kwargs):
         """
@@ -223,70 +271,9 @@ class SphinxSnippets(DBOperations):
     def process(self):
         """
         The query is not processed until you call the :meth:`process` method.
-        Returns the list of snippets or single string if it`s the only.
+        Returns the list of snippets or single string if it`s the only one.
         """
-        sxql = self.get_sxql()
-        result = self.get_data(sxql)
-        snippets = [x['snippet'] for x in result if x]
-
-        self.close_connection()
+        results = self._get_result(self._ql(), with_meta=False, with_status=False)
+        snippets = [x['snippet'] for x in results['result'] if x]
 
         return snippets[0] if len(snippets) == 1 else snippets
-
-
-class SphinxSearch(SphinxSearchBase, DBOperations):
-    """
-    Implements SphinxQL `SELECT syntax <http://sphinxsearch.com/docs/current.html#sphinxql-select>`_
-    and provides simple and clean way to make full-text queries, filtering, grouping, ordering search results etc.::
-
-        Sphinxit = SphinxConnector()
-        result = Sphinxit('some_index').process()
-
-    To make search by several indexes (you will, if you have main and delta indexes, for example), just separate
-    their names with comma::
-
-        Sphinxit= SphinxConnector()
-        result = Sphinxit('main_index', 'delta_index').process()
-
-    .. note::
-        :class:`SphinxSearch` needs :attr:`connector` to refer to ``searchd``, so you can't actually process
-        query without initializing :class:`SphinxConnector` first.
-
-    :param args: Sphinx index name or several indexes, separated with comma.
-    """
-
-    def __init__(self, *args):
-        DBOperations.__init__(self)
-        SphinxSearchBase.__init__(self, *args)
-
-    def process(self):
-        """
-        Pay attention that query is not processed until you call the :meth:`process` method.
-        You can dynamically construct as heavy queries as you want and process them only once when you need results,
-        as in this simple example::
-
-            ...
-            query = Sphinxit('main_index', 'delta_index').match('Good news')
-
-            if self.request.GET.get('id'):
-                query.filter(id__eq=self.request.GET['id'])
-            elif self.request.GET.get('country_id'):
-                query.filter(country_id__eq=self.request.GET['country_id'])
-
-            sphinx_result = query.process()
-            ...
-
-        Returns result dictionary with :attr:`result` and :attr:`meta` keys:
-        :attr:`result` is the list of dictionaries with documents ids and another specified attributes,
-        :attr:`meta` is the dictionary with some `additional meta-information <http://sphinxsearch.com/docs/2.0.3/sphinxql-show-meta.html>`_
-        about your query.
-
-        Raises :exc:`SphinxQLSyntaxException` if can't process query for some reasons.
-        """
-        sxql = self.get_sxql()
-        context = {'result': self.get_data(sxql),
-                   'meta': self.get_meta_info()}
-
-        self.close_connection()
-
-        return context

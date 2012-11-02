@@ -12,11 +12,12 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import itertools
+import operator
 from six.moves import reduce
 
 from .exceptions import SphinxQLSyntaxException, SphinxQLChainException
 from .lexemes import (SXQLSelect, SXQLFrom, SXQLMatch, SXQLWhere, SXQLOrder, SXQLLimit, SXQLGroupBy,
-                     SXQLWithinGroupOrderBy, SXQLFilter, SXQLORFilter, Count)
+                      SXQLWithinGroupOrderBy, SXQLFilter, SXQLORFilter, Count)
 
 
 class LexContainer(object):
@@ -37,7 +38,7 @@ class LexContainer(object):
 
         # It's the minimum set of lexemes to make valid SphinxQL query
         # SELECT * FROM some_index
-        self.release_chain = set([self.select_sx, self.from_sx])
+        self.release_chain = {self.select_sx, self.from_sx}
 
 
 class SphinxBasicContainerMixin(object):
@@ -176,11 +177,11 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
 
         You can specify more than one condition in atomic Q::
 
-            Sphinxit('index').filter(Q(id__eq=1, id__gte=5) & Q(counter__eq=1, counter__gte=100))
+            Sphinxit('index').filter(Q(id__eq=1, id__gte=5) | Q(counter__eq=1, counter__gte=100))
 
         .. code-block:: sql
 
-            SELECT *, (id=1 AND id>=5) AND (counter=1 AND counter>=100) AS cnd FROM index WHERE cnd>0
+            SELECT *, (id=1 AND id>=5) OR (counter=1 AND counter>=100) AS cnd FROM index WHERE cnd>0
 
         You can use OR concatenation inside the pairs, just negate Q with ~::
 
@@ -199,7 +200,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
                 self._container.select_sx(self._container.or_filters_sx)
                 self._container.where_sx(self._container.filters_sx(cnd__gt=0))  # simple hack for OR-filters
                 self._container.release_chain.add(self._container.where_sx)
-            if kwargs:  # kwargs are simple filter conditions
+            if kwargs:  # kwargs are some filter conditions
                 self._container.filters_sx(**kwargs)
                 self._container.where_sx(self._container.filters_sx)
                 self._container.release_chain.add(self._container.where_sx)
@@ -234,7 +235,7 @@ class SphinxSearchActionMethods(SphinxBasicContainerMixin):
 
     def group_by(self, *args):
         """
-        Currently supports grouping just by a single attribute (Sphinx restriction)::
+        Currently supports grouping by a single attribute only (Sphinx restriction)::
 
             Sphinxit('index').group_by('counter)
 
@@ -320,13 +321,13 @@ class SphinxSearchBase(SphinxSearchActionMethods):
         Looks like magic but it's not. Each lexeme object has certain join rules
         with another lexemes. Result container can contain several special SXQL objects
         and we need to concatenate them in the right order. Only one combination is proper.
-        It works fast, really.
+        It works well, but I'll
         """
         sxql_permutations = itertools.permutations(set_of_lexemes)
         bingo = None
         for sxql in sxql_permutations:
             try:
-                reduce(lambda x, y: x + y, sxql)  # if we can do that, the combination is correct
+                reduce(operator.add, sxql)  # if we can do that, the combination is correct
                 bingo = sxql
             except SphinxQLChainException:
                 pass
@@ -336,11 +337,11 @@ class SphinxSearchBase(SphinxSearchActionMethods):
         else:
             raise SphinxQLSyntaxException('Cannot process correct SphinxQL expression')
 
-    def get_sxql(self):
+    def _ql(self):
         """
         Call this method for debugging result SphinxQL query::
 
-            sxql = Sphinxit('index').select('id', 'title').get_sxql()
+            sxql = Sphinxit('index').select('id', 'title')._ql()
 
         .. code-block:: sql
 

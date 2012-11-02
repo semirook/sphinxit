@@ -41,7 +41,7 @@ class SXQLSelect(object):
     @property
     def lex(self):
         if self._modificators:
-            [self._attrs.append(a) for a in [l.lex for l in self._modificators]]
+            self._attrs.extend([l.lex for l in self._modificators])
 
         if not self._attrs:
             raise SphinxQLSyntaxException(self._validator_exception_msg)
@@ -62,9 +62,9 @@ class SXQLSelect(object):
 
     def __call__(self, *attrs):
         if self._is_modificators(*attrs):
-            [self._modificators.append(a) for a in self._clean_attrs(*attrs)]
+            self._modificators.extend(self._clean_attrs(*attrs))
         elif self._is_attributes(*attrs):
-            [self._attrs.append(a) for a in self._clean_attrs(*attrs)]
+            self._attrs.extend(self._clean_attrs(*attrs))
             if '*' in self._attrs:
                 self._attrs.remove('*')
         else:
@@ -102,7 +102,7 @@ class SXQLFrom(object):
         return filter(lambda x: x not in self._attrs, attrs)
 
     def __call__(self, *attrs):
-        [self._attrs.append(a) for a in self._clean_attrs(attrs)]
+        self._attrs.extend(self._clean_attrs(attrs))
         return self
 
     def __add__(self, other):
@@ -136,35 +136,37 @@ class CommonSXQLWhereMixin(object):
             except ValueError:
                 raise SphinxQLSyntaxException(self._attr_value_is_string_msg)
 
+        if (isinstance(v_attr, collections.Iterable)
+            and not all(map(lambda x: isinstance(x, six.integer_types), v_attr))):
+            try:
+                v_attr = map(int, v_attr)
+            except ValueError:
+                raise SphinxQLSyntaxException(self._not_integer_values_msg.format(v_attr))
+
         for ending in self.allowed_conditions_map.keys():
-            if k_attr.endswith(ending):
-                a = k_attr[:k_attr.rindex(ending)]
-                v = v_attr
+            if not k_attr.endswith(ending):
+                continue
 
-                if ending not in ('__between', '__in') and isinstance(v_attr, collections.Iterable):
-                    raise SphinxQLSyntaxException(self._attr_value_is_range_msg)
+            if ending not in ('__between', '__in') and isinstance(v_attr, collections.Iterable):
+                raise SphinxQLSyntaxException(self._attr_value_is_range_msg)
 
-                if ending in ('__between', '__in'):
-                    if not isinstance(v_attr, collections.Iterable):
-                        raise SphinxQLSyntaxException(self._not_iterable_values_msg.format(v_attr))
+            if ending in ('__between', '__in'):
+                if not isinstance(v_attr, collections.Iterable):
+                    raise SphinxQLSyntaxException(self._not_iterable_values_msg.format(v_attr))
 
-                    if (isinstance(v_attr, collections.Iterable)
-                        and not all(map(lambda x: isinstance(x, six.integer_types), v_attr))):
-                        try:
-                            v_attr = map(int, v_attr)
-                        except ValueError:
-                            raise SphinxQLSyntaxException(self._not_integer_values_msg.format(v_attr))
+            a = k_attr[:k_attr.rindex(ending)]
+            v = v_attr
 
-                if ending == '__between':
-                    if len(v_attr) != 2:
-                        raise SphinxQLSyntaxException(self._not_valid_range_msg.format(v_attr))
-                    f_v, s_v = v_attr
-                    return self.allowed_conditions_map[ending].format(a=a, f_v=f_v, s_v=s_v)
+            if ending == '__between':
+                if len(v_attr) != 2:
+                    raise SphinxQLSyntaxException(self._not_valid_range_msg.format(v_attr))
+                f_v, s_v = v_attr
+                return self.allowed_conditions_map[ending].format(a=a, f_v=f_v, s_v=s_v)
 
-                elif ending == '__in':
-                    v = ','.join(map(str, v_attr))
+            elif ending == '__in':
+                v = ','.join(map(str, v_attr))
 
-                return self.allowed_conditions_map[ending].format(a=a, v=v)
+            return self.allowed_conditions_map[ending].format(a=a, v=v)
 
         raise SphinxQLSyntaxException(self._not_correct_attr_msg.format(k_attr))
 
@@ -172,7 +174,8 @@ class CommonSXQLWhereMixin(object):
 class SXQLMatch(object):
     _validator_exception_msg = "The query has to be a string. '{0}' is not."
     _empty_exception_msg = 'No query defined for full-text search.'
-    _eqs_chars = ['@', '!', '^', '(', ')', '+', '~', '-', '|', '[', ']', '/', '<<', '=', '$', '*', '"']
+    _single_escape_chars = ["'", '+', '[', ']', '=', '*']
+    _double_escape_chars = ['@', '!', '^', '(', ')', '~', '-', '|', '/', '<<', '$', '"']
     _lex_string = "MATCH('{query}')"
     _joiner_string = ' '
 
@@ -191,9 +194,11 @@ class SXQLMatch(object):
             raise SphinxQLSyntaxException(self._validator_exception_msg.format(query))
 
         if escape:
-            substract_chars_re = '|\\'.join(self._eqs_chars)
-            query = re.sub(substract_chars_re, lambda m: r'\\{0}'.format(m.group()), query)
-            query = re.sub("'", '', query)  # escaping single quote doesn`t work
+            single_escape_chars_re = '|\\'.join(self._single_escape_chars)
+            query = re.sub(single_escape_chars_re, lambda m: r'\{0}'.format(m.group()), query)
+
+            double_escape_chars_re = '|\\'.join(self._double_escape_chars)
+            query = re.sub(double_escape_chars_re, lambda m: r'\\{0}'.format(m.group()), query)
 
         self._attrs.append(query)
 
@@ -212,10 +217,10 @@ class SXQLLimit(object):
 
     def __init__(self, offset=None, limit=None):
         if offset and limit:
-            self.offset, self.limit = self.clean_attrs((offset, limit))
+            self.offset, self.limit = self._clean_attrs((offset, limit))
         else:
             self.offset = 0
-            self.limit = 1000
+            self.limit = 100
 
         self._is_called_once = False
 
@@ -225,8 +230,15 @@ class SXQLLimit(object):
         return lex
 
     def _clean_attrs(self, attrs):
-        if not all(map(lambda x: isinstance(x, six.integer_types), attrs)) or len(attrs) != 2:
+        if len(attrs) != 2:
             raise SphinxQLSyntaxException(self._validator_exception_msg)
+
+        if not all(map(lambda x: isinstance(x, six.integer_types), attrs)):
+            try:
+                attrs = map(int, attrs)
+            except ValueError:
+                raise SphinxQLSyntaxException(self._validator_exception_msg)
+
         return attrs
 
     def __call__(self, *attrs):
@@ -252,11 +264,7 @@ class SXQLOrder(object):
 
     @property
     def lex(self):
-        if not self._attrs:
-            raise SphinxQLSyntaxException(self._attrs_validator_exception_msg)
-
         lex = self._lex_string.format(clauses=self._joiner_string.join(self._attrs))
-
         return lex
 
     def _clean_attrs(self, attrs):
@@ -294,18 +302,16 @@ class SXQLGroupBy(object):
 
     @property
     def lex(self):
-        if not self._attr:
-            raise SphinxQLSyntaxException(self._no_attr_validator_exception_msg)
         lex = self._lex_string.format(attr=self._attr)
         return lex
 
     def _clean_attr(self, attr):
         if not attr:
             raise SphinxQLSyntaxException(self._no_attr_validator_exception_msg)
-        elif len(attr) != 1:
+        if len(attr) != 1:
             raise SphinxQLSyntaxException(self._unique_exception_msg)
-        elif not isinstance(attr[0], six.string_types):
-            raise SphinxQLSyntaxException(self._attr_validator_exception_msg)
+        if not isinstance(attr[0], six.string_types):
+            raise SphinxQLSyntaxException(self._attr_validator_exception_msg.format(attr[0]))
 
         return attr[0]
 
@@ -340,7 +346,7 @@ class SXQLWithinGroupOrderBy(SXQLOrder):
         return super(SXQLWithinGroupOrderBy, self).__call__(*attrs)
 
     def __add__(self, other):
-        if isinstance(other, (SXQLLimit)):
+        if isinstance(other, SXQLLimit):
             return other
         raise SphinxQLChainException()
 
@@ -356,19 +362,19 @@ class SXQLWhere(object):
 
     @property
     def lex(self):
-        if not self._attrs:
-            raise SphinxQLSyntaxException(self._validator_exception_msg)
-
         return self._lex_string.format(clauses=self._joiner_string.join([l.lex for l in self._attrs]))
 
     def _clean_attrs(self, attrs):
+        if not attrs:
+            raise SphinxQLSyntaxException(self._validator_exception_msg)
+
         if not all(map(lambda x: isinstance(x, (SXQLFilter, SXQLMatch)), attrs)):
             raise SphinxQLSyntaxException(self._container_exception_msg)
 
         return filter(lambda x: x not in self._attrs, attrs)
 
     def __call__(self, *attrs):
-        [self._attrs.append(a) for a in self._clean_attrs(attrs)]
+        self._attrs.extend(self._clean_attrs(attrs))
         return self
 
     def __add__(self, other):
@@ -556,8 +562,8 @@ class SXQLSnippets(object):
     excerpts_params = {"before_match": {'type': six.string_types, 'defaults': '<b>'},
                        "after_match": {'type': six.string_types, 'defaults': '</b>'},
                        "chunk_separator": {'type': six.string_types, 'defaults': '...'},
-                       "limit": {'type': int, 'defaults': 256},
-                       "around": {'type': int, 'defaults': 5},
+                       "limit": {'type': six.integer_types, 'defaults': 256},
+                       "around": {'type': six.integer_types, 'defaults': 5},
                        "exact_phrase": {'type': bool, 'defaults': 0},
                        "single_passage": {'type': bool, 'defaults': 0},
                        "use_boundaries": {'type': bool, 'defaults': 0},
@@ -566,7 +572,7 @@ class SXQLSnippets(object):
                        "force_all_words": {'type': bool, 'defaults': 0},
                        "limit_passages": {'type': bool, 'defaults': 0},
                        "limit_words": {'type': bool, 'defaults': 0},
-                       "start_passage_id": {'type': int, 'defaults': 1},
+                       "start_passage_id": {'type': six.integer_types, 'defaults': 1},
                        "load_files": {'type': bool, 'defaults': 0},
                        "load_files_scattered": {'type': bool, 'defaults': 0},
                        "html_strip_mode": {'type': six.string_types,
@@ -580,7 +586,7 @@ class SXQLSnippets(object):
                        }
 
     type_to_str_map = {six.string_types: "'{0}' AS {1}",
-                       int: "{0} AS {1}",
+                       six.integer_types: "{0} AS {1}",
                        bool: "{0} AS {1}",
                        }
 
@@ -598,37 +604,42 @@ class SXQLSnippets(object):
         if not isinstance(attr, six.string_types):
             raise SphinxQLSyntaxException(self._not_string_validator_exception_msg.format(attr))
 
-        attr = re.sub("'", '', attr)  # escaping single quote doesn`t work
+        attr = re.sub("'", lambda m: r'\{0}'.format(m.group()), attr)
 
         return attr
 
     def _clean_data(self, data):
         if not isinstance(data, collections.Iterable):
             raise SphinxQLSyntaxException(self._data_validator_exception_msg.format(data))
-        if not isinstance(data, six.string_types) and False in map(lambda d: isinstance(d, six.string_types), data):
+        if (not isinstance(data, six.string_types)
+            and False in map(lambda d: isinstance(d, six.string_types), data)):
             raise SphinxQLSyntaxException(self._data_validator_exception_msg.format(data))
         if isinstance(data, six.string_types):
             data = [data]
 
-        return map(lambda x: re.sub("'", '', x), data)  # escaping single quote doesn`t work
+        return map(lambda d: re.sub("'", lambda c: r'\{0}'.format(c.group()), d), data)
 
     def _clean_options(self, options):
         params_chain = []
         for k, v in options.items():
-            if k in self.excerpts_params.keys():
-                param_info = self.excerpts_params[k]
-                if not isinstance(v, param_info['type']):
-                    raise SphinxQLSyntaxException(self._type_validator_exception_msg.format(k))
-                if param_info.get('allowed', False) and v not in param_info['allowed']:
-                    raise SphinxQLSyntaxException(self._value_validator_exception_msg.format(
-                        k, self._joiner_string.join(["'{0}'".format(s) for s in param_info['allowed']]))
-                    )
-                if isinstance(v, bool):
-                    v = 1 if True else 0
-                param_string = self.type_to_str_map[param_info['type']]
-                params_chain.append(param_string.format(v, k))
-            else:
+            if k not in self.excerpts_params.keys():
                 raise SphinxQLSyntaxException(self._parameter_validator_exception_msg.format(k))
+
+            param_info = self.excerpts_params[k]
+            if not isinstance(v, param_info['type']):
+                raise SphinxQLSyntaxException(self._type_validator_exception_msg.format(k))
+
+            if param_info.get('allowed', False) and v not in param_info['allowed']:
+                raise SphinxQLSyntaxException(
+                    self._value_validator_exception_msg.format(
+                        k, self._joiner_string.join(["'{0}'".format(s) for s in param_info['allowed']]),
+                    )
+                )
+            if isinstance(v, bool):
+                v = 1 if v else 0
+
+            param_string = self.type_to_str_map[param_info['type']]
+            params_chain.append(param_string.format(v, k))
 
         return self._joiner_string.join(params_chain)
 

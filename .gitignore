@@ -1,9 +1,9 @@
 /build
 /dist
 /docs/_build
+/.idea
 *.egg-info
 *.egg
 *.pyc
 .DS_Store
 .noseids
-sphinxit.sublime-*
