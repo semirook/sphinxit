@@ -3,6 +3,13 @@
 Changelog
 =========
 
+Version 0.2 (2012-11-02)
+--------------------------
+
+* Python 3 compatibility (thanks to `six` layer)
+* `oursql` as MySQL layer (no more MySQLdb)
+* Fixes in meta characters escaping
+* The code is more polished and tested
 
 Version 0.1.2 (2012-08-06)
 --------------------------
