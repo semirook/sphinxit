@@ -1,20 +1,24 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from unittest2 import TestCase
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
 from ..search import SphinxConnector, SphinxSearch, SphinxSnippets
 from ..core.exceptions import SphinxQLSyntaxException, ImproperlyConfigured
 from ..core.lexemes import Q, Avg, Count
 
 
-class TestSQLConnector(TestCase):
+class TestSQLConnector(unittest.TestCase):
 
     def test_no_connector(self):
         self.assertRaises(ImproperlyConfigured, lambda: SphinxSearch('index').process())
         self.assertRaises(ImproperlyConfigured, lambda: SphinxSnippets('index', ['data'], 'query').process())
 
 
-class TestSQLProcessor(TestCase):
+class TestSQLProcessor(unittest.TestCase):
 
     def setUp(self):
         self.SphinxSearch = SphinxConnector().Search
@@ -139,7 +143,7 @@ class TestSQLProcessor(TestCase):
         )
 
 
-class TestSnippets(TestCase):
+class TestSnippets(unittest.TestCase):
 
     def setUp(self):
         self.SphinxSnippets = SphinxConnector().Snippets

@@ -1,7 +1,11 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from unittest2 import TestCase
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
 from ..core.lexemes import (SXQLSelect, SXQLFrom, SXQLLimit, SXQLOrder,
                             SXQLGroupBy, SXQLWithinGroupOrderBy,
                             SXQLMatch, SXQLFilter, SXQLORFilter,
@@ -9,7 +13,7 @@ from ..core.lexemes import (SXQLSelect, SXQLFrom, SXQLLimit, SXQLOrder,
 from ..core.exceptions import SphinxQLSyntaxException
 
 
-class TestSXQLSelect(TestCase):
+class TestSXQLSelect(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLSelect()
@@ -28,7 +32,7 @@ class TestSXQLSelect(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLSelect(), ['title', 'name'])
 
 
-class TestSXQLFrom(TestCase):
+class TestSXQLFrom(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLFrom()
@@ -48,7 +52,7 @@ class TestSXQLFrom(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLFrom(), ['index'])
 
 
-class TestSXQLLimit(TestCase):
+class TestSXQLLimit(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLLimit()
@@ -73,7 +77,7 @@ class TestSXQLLimit(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLLimit())
 
 
-class TestSXQLOrder(TestCase):
+class TestSXQLOrder(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLOrder()
@@ -90,7 +94,7 @@ class TestSXQLOrder(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLOrder(), 'name', 'REST')
 
 
-class TestSXQLGroupBy(TestCase):
+class TestSXQLGroupBy(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLGroupBy()
@@ -103,7 +107,7 @@ class TestSXQLGroupBy(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLGroupBy(), 'name', 'title')
 
 
-class TestSXQLWithinGroupOrderBy(TestCase):
+class TestSXQLWithinGroupOrderBy(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLWithinGroupOrderBy()
@@ -119,7 +123,7 @@ class TestSXQLWithinGroupOrderBy(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLWithinGroupOrderBy(), 'name')
 
 
-class TestSXQLFilter(TestCase):
+class TestSXQLFilter(unittest.TestCase):
 
     def test_initial(self):
         self.assertEqual(SXQLFilter()(id__eq=1).lex, 'id=1')
@@ -149,7 +153,7 @@ class TestSXQLFilter(TestCase):
         self.assertRaises(SphinxQLSyntaxException, SXQLFilter(), title__eq='Error')
 
 
-class TestSXQLMatch(TestCase):
+class TestSXQLMatch(unittest.TestCase):
 
     def test_initial(self):
         sxql_inst = SXQLMatch()
@@ -182,7 +186,7 @@ class TestSXQLMatch(TestCase):
         self.assertRaises(SphinxQLSyntaxException, sxql_inst, 42)
 
 
-class TestQ(TestCase):
+class TestQ(unittest.TestCase):
 
     def test_initial(self):
         self.assertEqual(Q(id__eq=1).lex, "(id=1)")
@@ -196,7 +200,7 @@ class TestQ(TestCase):
         self.assertIn(q.lex, ('(id=1 OR id>=5)', '(id>=5 OR id=1)'))
 
 
-class TestSXQLORFilter(TestCase):
+class TestSXQLORFilter(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(
@@ -227,7 +231,7 @@ class TestSXQLORFilter(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: SXQLORFilter()(Q(counter__between=[1, 5])).lex)
 
 
-class TestCount(TestCase):
+class TestCount(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(Count().lex, 'COUNT(*) AS num')
@@ -240,7 +244,7 @@ class TestCount(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: Count(alias='count').lex)
 
 
-class TestAvg(TestCase):
+class TestAvg(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(Avg('price').lex, 'AVG(price) AS price_avg')
@@ -251,7 +255,7 @@ class TestAvg(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: Avg('counter', 154).lex)
 
 
-class TestMin(TestCase):
+class TestMin(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(Min('price').lex, 'MIN(price) AS price_min')
@@ -262,7 +266,7 @@ class TestMin(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: Min('price', 154).lex)
 
 
-class TestMax(TestCase):
+class TestMax(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(Max('price').lex, 'MAX(price) AS price_max')
@@ -272,7 +276,7 @@ class TestMax(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: Max(['price']).lex)
 
 
-class TestSum(TestCase):
+class TestSum(unittest.TestCase):
 
     def test_basics(self):
         self.assertEqual(Sum('counter').lex, 'SUM(counter) AS counter_sum')
@@ -283,7 +287,7 @@ class TestSum(TestCase):
         self.assertRaises(SphinxQLSyntaxException, lambda: Sum('counter', 154).lex)
 
 
-class TestSXQLSnippets(TestCase):
+class TestSXQLSnippets(unittest.TestCase):
 
     def test_basics(self):
         sxql_inst = SXQLSnippets('index', data=['only good news'], query='Good News')
