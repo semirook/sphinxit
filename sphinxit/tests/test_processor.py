@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from unittest import TestCase
+from unittest2 import TestCase
 from ..search import SphinxConnector, SphinxSearch, SphinxSnippets
 from ..core.exceptions import SphinxQLSyntaxException, ImproperlyConfigured
 from ..core.lexemes import Q, Avg, Count

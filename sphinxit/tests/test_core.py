@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from unittest import TestCase
+from unittest2 import TestCase
 from ..core.lexemes import (SXQLSelect, SXQLFrom, SXQLLimit, SXQLOrder,
                             SXQLGroupBy, SXQLWithinGroupOrderBy,
                             SXQLMatch, SXQLFilter, SXQLORFilter,

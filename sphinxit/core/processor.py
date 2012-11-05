@@ -38,7 +38,7 @@ class LexContainer(object):
 
         # It's the minimum set of lexemes to make valid SphinxQL query
         # SELECT * FROM some_index
-        self.release_chain = {self.select_sx, self.from_sx}
+        self.release_chain = set([self.select_sx, self.from_sx])
 
 
 class SphinxBasicContainerMixin(object):
