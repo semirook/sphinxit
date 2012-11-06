@@ -136,6 +136,7 @@ class TestSXQLFilter(unittest.TestCase):
         self.assertEqual(SXQLFilter()(e__eq=15).lex, 'e=15')
         self.assertEqual(SXQLFilter()(id__in=['2', '4', 5]).lex, 'id IN (2,4,5)')
         self.assertEqual(SXQLFilter()(id__neq=3).lex, 'id!=3')
+        self.assertEqual(SXQLFilter()(id__between=['123', '345']).lex, 'id BETWEEN 123 AND 345')
 
         more_where_defs = SXQLFilter()(id__eq=1, att1__lt=1, att2__between=[1, 5])
         results = ('id=1 AND att2 BETWEEN 1 AND 5 AND att1<1',

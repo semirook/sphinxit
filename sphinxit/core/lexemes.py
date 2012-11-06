@@ -139,7 +139,7 @@ class CommonSXQLWhereMixin(object):
         if (isinstance(v_attr, collections.Iterable)
             and not all(map(lambda x: isinstance(x, six.integer_types), v_attr))):
             try:
-                v_attr = map(int, v_attr)
+                v_attr = list(map(int, v_attr))
             except ValueError:
                 raise SphinxQLSyntaxException(self._not_integer_values_msg.format(v_attr))
 
