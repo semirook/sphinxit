@@ -3,6 +3,12 @@
 Changelog
 =========
 
+Version 0.2.1 (2012-11-06)
+--------------------------
+
+* Python 2.6 compatibility is back
+* unittest2 explicit usage fix for 2.6
+
 Version 0.2 (2012-11-02)
 --------------------------
 
