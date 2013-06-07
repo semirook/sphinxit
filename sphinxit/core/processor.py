@@ -9,342 +9,297 @@
 """
 
 from __future__ import unicode_literals
-from __future__ import absolute_import
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+from copy import deepcopy
 
-import itertools
-import operator
-from six.moves import reduce
+import six
 
-from .exceptions import SphinxQLSyntaxException, SphinxQLChainException
-from .lexemes import (SXQLSelect, SXQLFrom, SXQLMatch, SXQLWhere, SXQLOrder, SXQLLimit, SXQLGroupBy,
-                      SXQLWithinGroupOrderBy, SXQLFilter, SXQLORFilter, Count)
-
-
-class LexContainer(object):
-    """
-    Container of the lexemes to accumulate calls for further SphinxQL expression assembly
-    """
-    def __init__(self):
-        self.select_sx = SXQLSelect()
-        self.from_sx = SXQLFrom()
-        self.limit_sx = SXQLLimit()
-        self.order_sx = SXQLOrder()
-        self.group_by_sx = SXQLGroupBy()
-        self.match_sx = SXQLMatch()
-        self.where_sx = SXQLWhere()
-        self.filters_sx = SXQLFilter()
-        self.or_filters_sx = SXQLORFilter()
-        self.within_group_order_by_sx = SXQLWithinGroupOrderBy()
-
-        # It's the minimum set of lexemes to make valid SphinxQL query
-        # SELECT * FROM some_index
-        self.release_chain = set([self.select_sx, self.from_sx])
+from sphinxit.core.helpers import sparse_free_sequence
+from sphinxit.core.nodes import (
+    SelectFromContainer,
+    AggregateObject,
+    UpdateSetNode,
+    FiltersContainer,
+    LimitNode,
+    GroupByNode,
+    WithinGroupOrderByNode,
+    OrderByContainer,
+    OptionsContainer,
+    OR,
+    SnippetsOptionsContainer,
+    SnippetsQueryNode,
+    RawAttr
+)
+from sphinxit.core.mixins import ConfigMixin
+from sphinxit.core.constants import NODES_ORDER
+from sphinxit.core.connector import SphinxConnector
 
 
-class SphinxBasicContainerMixin(object):
-    """
-    Initializes new query container for each new query
-    """
-    def __init__(self, *args):
-        self._container = LexContainer()
-        self._container.from_sx(*args)
+class LazySelectTree(ConfigMixin):
+
+    def __init__(self, indexes):
+        self._indexes = indexes
+        self._nodes = OrderedDict([
+            ('SelectFrom', None),
+            ('UpdateSet', None),
+            ('Where', None),
+            ('GroupBy', None),
+            ('OrderBy', None),
+            ('WithinGroupOrderBy', None),
+            ('Limit', None),
+            ('Options', None),
+        ])
+        super(LazySelectTree, self).__init__()
+
+    def __bool__(self):
+        return bool(self._nodes['SelectFrom'] or self._nodes['UpdateSet'])
+
+    def copy(self):
+        new_tree = LazySelectTree(self._indexes).with_config(self.config)
+        new_tree._indexes = self._indexes[:]
+        new_tree._nodes = deepcopy(self._nodes)
+        return new_tree
+
+    @property
+    def SelectFrom(self):
+        if self._nodes['SelectFrom'] is None:
+            select_container = SelectFromContainer(indexes=self._indexes).with_config(self.config)
+            self._nodes['SelectFrom'] = select_container
+        return self._nodes['SelectFrom']
+
+    @property
+    def Where(self):
+        if self._nodes['Where'] is None:
+            filters_container = FiltersContainer().with_config(self.config)
+            self._nodes['Where'] = filters_container
+        return self._nodes['Where']
+
+    @property
+    def GroupBy(self):
+        if self._nodes['GroupBy'] is None:
+            group_by_node = GroupByNode().with_config(self.config)
+            self._nodes['GroupBy'] = group_by_node
+        return self._nodes['GroupBy']
+
+    @property
+    def OrderBy(self):
+        if self._nodes['OrderBy'] is None:
+            order_by_container = OrderByContainer().with_config(self.config)
+            self._nodes['OrderBy'] = order_by_container
+        return self._nodes['OrderBy']
+
+    @property
+    def WithinGroupOrderBy(self):
+        if self._nodes['WithinGroupOrderBy'] is None:
+            within_group_order_by_node = WithinGroupOrderByNode().with_config(self.config)
+            self._nodes['WithinGroupOrderBy'] = within_group_order_by_node
+        return self._nodes['WithinGroupOrderBy']
+
+    @property
+    def Limit(self):
+        if self._nodes['Limit'] is None:
+            self._nodes['Limit'] = LimitNode().with_config(self.config)
+        return self._nodes['Limit']
+
+    @property
+    def Options(self):
+        if self._nodes['Options'] is None:
+            options_container = OptionsContainer().with_config(self.config)
+            self._nodes['Options'] = options_container
+        return self._nodes['Options']
+
+    @property
+    def UpdateSet(self):
+        if self._nodes['UpdateSet'] is None:
+            update_set_node = UpdateSetNode(indexes=self._indexes).with_config(self.config)
+            self._nodes['UpdateSet'] = update_set_node
+        return self._nodes['UpdateSet']
+
+    def is_update(self):
+        return self._nodes['UpdateSet'] is not None
+
+    def get_select_nodes(self):
+        if self._nodes['SelectFrom'] is None:
+            select_container = SelectFromContainer(indexes=self._indexes).with_config(self.config)
+            self._nodes['SelectFrom'] = select_container
+
+        return [self._nodes[n] for n in NODES_ORDER.select]
+
+    def get_update_nodes(self):
+        return [self._nodes[n] for n in NODES_ORDER.update]
 
 
-class SphinxSearchActionMethods(SphinxBasicContainerMixin):
-    """
-    Implements SphinxQL `SELECT syntax <http://sphinxsearch.com/docs/current.html#sphinxql-select>`_.
-    """
+class LazySnippetsTree(ConfigMixin):
+    _template = 'CALL SNIPPETS ({conditions})'
 
-    def select(self, *args):
-        """
-        You can specify the list of attributes in results table::
+    def __init__(self, index):
+        self._index = index
+        self._snippets_syntax = OrderedDict([
+            ('SnippetQuery', None),
+            ('Options', None),
+        ])
+        super(LazySnippetsTree, self).__init__()
 
-            Sphinxit('index').select('id', 'title')
+    def __bool__(self):
+        return bool(self._snippets_syntax['SnippetQuery'])
 
-        .. code-block:: sql
+    @property
+    def SnippetQuery(self):
+        if self._snippets_syntax['SnippetQuery'] is None:
+            self._snippets_syntax['SnippetQuery'] = (
+                SnippetsQueryNode(index=self._index).with_config(self.config)
+            )
+        return self._snippets_syntax['SnippetQuery']
 
-            SELECT id, title FROM index
+    @property
+    def Options(self):
+        if self._snippets_syntax['Options'] is None:
+            self._snippets_syntax['Options'] = (
+                SnippetsOptionsContainer().with_config(self.config)
+            )
+        return self._snippets_syntax['Options']
 
-        if you don`t specify any attributes::
+    def lex(self):
+        return self._template.format(
+            conditions=', '.join([
+                x.lex()
+                for x in sparse_free_sequence(self._snippets_syntax.values())
+            ])
+        )
 
-            Sphinxit('index')
 
-        .. code-block:: sql
+def copy_tree(method):
+    def wrapper(self, *args, **kwargs):
+        self_copy = self.__class__(self.indexes, self.config, self.connector)
+        self_copy._nodes = self._nodes.copy()
+        return method(self_copy, *args, **kwargs)
+    return wrapper
 
-            SELECT * FROM index
 
-        :param args: one or more Sphinx attributes names, separated with comma.
-        """
+class Search(ConfigMixin):
+
+    def __init__(self, indexes, config, connector=None):
+        super(Search, self).__init__()
+        self._nodes = LazySelectTree(indexes=indexes).with_config(config)
+        self.indexes = indexes
+        self.config = config
+        self.connector = connector or SphinxConnector(config)
+
+    @copy_tree
+    def select(self, *args, **kwargs):
         if args:
-            self._container.select_sx(*args)
+            for field in args:
+                if isinstance(field, six.string_types):
+                    self._nodes.SelectFrom.add_field(field)
+                if isinstance(field, (tuple, list)) and len(field) == 2:
+                    field, alias = field
+                    self._nodes.SelectFrom.add_alias(field, alias)
+                if isinstance(field, AggregateObject):
+                    self._nodes.SelectFrom.add_aggregation(field)
+                if isinstance(field, RawAttr):
+                    self._nodes.SelectFrom.add_raw_attr(field)
+        if kwargs:
+            for field, alias in kwargs.items():
+                self._nodes.SelectFrom.add_alias(field, alias)
 
         return self
 
-    def match(self, query=None, escape=True):
-        """
-        Match maps to fulltext query. By default it escapes user query to make
-        it safe for ``searchd`` and it's just what you need in most cases::
-
-            Sphinxit('index').match('semirook@gmail.com')
-
-        .. code-block:: sql
-
-            SELECT * FROM index WHERE MATCH('semirook\\@gmail.com')
-
-        You can set :attr:`escape` attribute to ``False`` to use extended query syntax
-        (http://sphinxsearch.com/docs/current.html#extended-syntax) without escaping special symbols::
-
-            Sphinxit('index').match('@email "semirook@gmail.com"', escape=False)
-
-        .. code-block:: sql
-
-            SELECT * FROM index WHERE MATCH('@email "semirook@gmail.com"')
-
-        In some cases you may need to concatenate sub-queries (I had such case, really).
-        Some trick makes that for you implicitly::
-
-            Sphinxit('index').match('Hello').match('World!')
-
-        .. code-block:: sql
-
-            SELECT * FROM index WHERE MATCH('Hello World\\!')
-
-        :param query: fulltext query.
-        :param escape: switches query post-processing.
-        """
-        if query:
-            self._container.match_sx(query, escape)
-            self._container.where_sx(self._container.match_sx)
-            self._container.release_chain.add(self._container.where_sx)
-
+    @copy_tree
+    def update(self, **kwargs):
+        if kwargs:
+            for field, value in kwargs.items():
+                self._nodes.UpdateSet.update(field, value)
         return self
 
-    def filter(self, *args, **kwargs):
-        """
-        Provides simple and clean interface for filtering search results within different
-        comparison operators like (=, !=, <, >, <=, >=), IN, BETWEEN and even OR (Sphinx doesn't support it yet).
-        Sphinxit uses Django-style syntax for that.
-
-        ==============================  ============================
-        Sphinxit                        SphinxQL
-        ==============================  ============================
-        attr__eq = value                attr > value
-        attr__neq = value               attr != value
-        attr__gt = value                attr > value
-        attr__gte = value               attr >= value
-        attr__lt = value                attr < value
-        attr__lte = value               attr <= value
-        attr__in = [value, value]       attr IN (value, value)
-        attr__between = [value, value]  attr BETWEEN value AND value
-        ==============================  ============================
-
-        The simplest example::
-
-            Sphinxit('index').filter(id__gte=5)
-
-        .. code-block:: sql
-
-            SELECT * FROM index WHERE id>=5
-
-        You can apply as much filters as you need by chaining :meth:`filter` methods.
-        Note that these two queries are the same. Feel free::
-
-            Sphinxit('index').filter(id__gte=5, counter__in=[1, 5])
-            Sphinxit('index').filter(id__gte=5).filter(counter__in=[1, 5])
-
-        .. code-block:: sql
-
-            SELECT * FROM index WHERE id>=5 AND counter IN (1,5)
-
-        Lyrical digression. I don't know why OR is not supported by Sphinx out of the box.
-        It "will be in the future" but no one knows when. Sphinxit provides special Django-style
-        ``Q`` syntax for that and makes some workaround::
-
-            Sphinxit('index').filter(Q(id__eq=1, id__gte=5))
-
-        .. code-block:: sql
-
-            SELECT *, (id>=5 AND id=1) AS cnd FROM index WHERE cnd>0
-
-        It works well even with more complex queries, you can mix Q and simple filters in one chain,
-        add as much Q expressions as you need::
-
-            Sphinxit('index').filter(Q(id__eq=1) | Q(id__gte=5)).filter(Q(counter__eq=1) & Q(id__lt=20)).filter(id__eq=2)
-
-        .. code-block:: sql
-
-            SELECT *, (id=1) OR (id>=5) AND (counter=1) AND (id<20) AS cnd FROM index WHERE cnd>0 AND id=2
-
-        You can specify more than one condition in atomic Q::
-
-            Sphinxit('index').filter(Q(id__eq=1, id__gte=5) | Q(counter__eq=1, counter__gte=100))
-
-        .. code-block:: sql
-
-            SELECT *, (id=1 AND id>=5) OR (counter=1 AND counter>=100) AS cnd FROM index WHERE cnd>0
-
-        You can use OR concatenation inside the pairs, just negate Q with ~::
-
-            Sphinxit('index').filter(~Q(id__eq=1, id__gte=5) & ~Q(counter__eq=1, counter__gte=100))
-
-        .. code-block:: sql
-
-            SELECT *, (id=1 OR id>=5) AND (counter=1 OR counter>=100) AS cnd FROM index WHERE cnd>0
-
-        :param args: one or more Q objects, separated with comma.
-        :param kwargs: Sphinxit-specific filters, separated with comma.
-        """
-        if args or kwargs:
-            if args:  # args are Q-objects
-                self._container.or_filters_sx(*args)
-                self._container.select_sx(self._container.or_filters_sx)
-                self._container.where_sx(self._container.filters_sx(cnd__gt=0))  # simple hack for OR-filters
-                self._container.release_chain.add(self._container.where_sx)
-            if kwargs:  # kwargs are some filter conditions
-                self._container.filters_sx(**kwargs)
-                self._container.where_sx(self._container.filters_sx)
-                self._container.release_chain.add(self._container.where_sx)
-
-        return self
-
-    def order_by(self, *args):
-        """
-        You can order search results by any attribute with specified direction ('ASC' or 'DESC')::
-
-            Sphinxit('index').order_by('title', 'asc')
-
-        .. code-block:: sql
-
-            SELECT * FROM index ORDER BY title ASC
-
-        Ordering by several attributes is also possible::
-
-            Sphinxit('index').order_by('title', 'asc').order_by('name', 'desc')
-
-        .. code-block:: sql
-
-            SELECT * FROM index ORDER BY title ASC, name DESC
-
-        :param args: ordering Sphinx attribute name and direction ('ASC' or 'DESC').
-        """
-        if args:
-            self._container.order_sx(*args)
-            self._container.release_chain.add(self._container.order_sx)
-
-        return self
-
-    def group_by(self, *args):
-        """
-        Currently supports grouping by a single attribute only (Sphinx restriction)::
-
-            Sphinxit('index').group_by('counter)
-
-        .. code-block:: sql
-
-            SELECT * FROM index GROUP BY counter
-
-        :param args: grouping Sphinx attribute name.
-        """
-        if args:
-            self._container.group_by_sx(*args)
-            self._container.release_chain.add(self._container.group_by_sx)
-
-        return self
-
-    def within_group_order_by(self, *args):
-        """
-        This is a Sphinx specific extension that lets you control how
-        the best row within a group will to be selected::
-
-            Sphinxit('index').within_group_order_by('title', 'ASC')
-
-        .. code-block:: sql
-
-            SELECT * FROM index WITHIN GROUP ORDER BY title ASC
-
-        :param args: grouping Sphinx attribute name and ordering direction ('ASC' or 'DESC').
-        """
-        if args:
-            self._container.within_group_order_by_sx(*args)
-            self._container.release_chain.add(self._container.within_group_order_by_sx)
-
-        return self
-
-    def limit(self, *args):
-        """
-        An implicit ``LIMIT 0,20`` is present in Sphinx by default.
-        You can specify your own offset and limit values::
-
-            Sphinxit('index').limit(20,1000)
-
-        .. code-block:: sql
-
-            SELECT * FROM index LIMIT 20,1000
-
-        :param args: OFFSET and LIMIT integers.
-        """
-        if args:
-            self._container.limit_sx(*args)
-            self._container.release_chain.add(self._container.limit_sx)
-
-        return self
-
-    def cluster(self, attr=None, alias=None):
-        """
-        This method is just an alias for commonly used counted grouping::
-
-            Sphinxit('index').cluster('title')
-
-        .. code-block:: sql
-
-            SELECT *, COUNT(*) AS num FROM index GROUP BY title
-
-        You can write this query in more explicit way if you want to::
-
-            Sphinxit('index').select(Count()).group_by('title')
-
-        :param attr: grouping Sphinx attribute name.
-        :param alias: alias of the new calculated field (optional, `num` by default).
-        """
-        if attr:
-            self._container.select_sx(Count(alias=alias))
-            self._container.group_by_sx(attr)
-            self._container.release_chain.add(self._container.group_by_sx)
-
-        return self
-
-
-class SphinxSearchBase(SphinxSearchActionMethods):
-
-    def _sxql_dragon(self, set_of_lexemes):
-        """
-        Looks like magic but it's not. Each lexeme object has certain join rules
-        with another lexemes. Result container can contain several special SXQL objects
-        and we need to concatenate them in the right order. Only one combination is proper.
-        It works well, but I'll
-        """
-        sxql_permutations = itertools.permutations(set_of_lexemes)
-        bingo = None
-        for sxql in sxql_permutations:
-            try:
-                reduce(operator.add, sxql)  # if we can do that, the combination is correct
-                bingo = sxql
-            except SphinxQLChainException:
-                pass
-
-        if bingo:
-            return ' '.join([x.lex for x in bingo])  # this is our result SphinxQL expression
+    @copy_tree
+    def match(self, query, raw=False):
+        if not raw:
+            self._nodes.Where.add_query(query)
         else:
-            raise SphinxQLSyntaxException('Cannot process correct SphinxQL expression')
+            self._nodes.Where.add_raw_query(query)
 
-    def _ql(self):
-        """
-        Call this method for debugging result SphinxQL query::
+        return self
 
-            sxql = Sphinxit('index').select('id', 'title')._ql()
+    @copy_tree
+    def filter(self, *args, **kwargs):
+        if args:
+            for cond in args:
+                if isinstance(cond, OR):
+                    self._nodes.SelectFrom.add_or(cond)
+                    self._nodes.Where.add_condition('cnd__gte', 0)
+        if kwargs:
+            self._nodes.Where.add_conditions(**kwargs)
 
-        .. code-block:: sql
+        return self
 
-            SELECT id, title FROM index
-        """
-        return self._sxql_dragon(self._container.release_chain)
+    @copy_tree
+    def limit(self, offset=None, limit=None):
+        self._nodes.Limit.set_range(offset, limit)
+        return self
+
+    @copy_tree
+    def group_by(self, field):
+        self._nodes.GroupBy.by_field(field)
+        return self
+
+    @copy_tree
+    def within_group_order_by(self, field, ordering=None):
+        self._nodes.WithinGroupOrderBy.by_field(field, ordering)
+        return self
+
+    @copy_tree
+    def order_by(self, field, ordering=None):
+        self._nodes.OrderBy.by_field(field, ordering)
+        return self
+
+    @copy_tree
+    def options(self, **kwargs):
+        self._nodes.Options.set_options(**kwargs)
+        return self
+
+    def lex(self):
+        if self._nodes.is_update():
+            actual_nodes = self._nodes.get_update_nodes()
+        else:
+            actual_nodes = self._nodes.get_select_nodes()
+
+        return ' '.join([
+            x.lex() for x in sparse_free_sequence(actual_nodes)
+        ])
+
+    def ask(self, with_meta=False, with_status=False):
+        return self.connector.execute(sxql_query=self.lex())
+
+
+class Snippet(ConfigMixin):
+
+    def __init__(self, index=None, config=None, connector=None):
+        super(Snippet, self).__init__()
+        self._snippets_tree = LazySnippetsTree(index=index).with_config(config)
+        self.index = index
+        self.config = config
+        self.connector = connector or SphinxConnector(config)
+
+    def from_data(self, *args):
+        self._snippets_tree.SnippetQuery.add_data(*args)
+        return self
+
+    def for_query(self, query):
+        self._snippets_tree.SnippetQuery.add_query(query)
+        return self
+
+    def options(self, **kwargs):
+        self._snippets_tree.Options.set_options(**kwargs)
+        return self
+
+    def lex(self):
+        return self._snippets_tree.lex()
+
+    def ask(self):
+        return self.connector.execute(
+            sxql_query=self.lex(),
+            no_extra=True,
+        )

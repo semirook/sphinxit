@@ -2,8 +2,10 @@
 /dist
 /docs/_build
 /.idea
+/.ropeproject
 *.egg-info
 *.egg
 *.pyc
+*.swp
 .DS_Store
 .noseids
