@@ -1,35 +1,32 @@
 User's Guide
 ------------
 
-Less theory, more practice. Usually we have no time and desire to read lengthy docs,
-so this part is more or less like "How To". If you prefer more detailed and strict docs, 
-Sphinxit has documented :ref:`API`. Also, you always can explore tests and sources, 
-it`s quite useful for understanding internal project architecture.
+Usually we have no time and desire to read lengthy docs, so this tutorial is compact 
+and has commented code examples for all of the common use cases.
+If you are interested in some internal Sphinxit mechanisms, feel free to explore tests and sources.
 
 .. toctree::
    :maxdepth: 2
 
    installation
-   quickstart
-   searching
-   filtering
-   snippets
+   preparation
+   usage
    integration
-   
+
 .. toctree::
    :maxdepth: 2
 
-   api
    changelog
 
 
 Development
 -----------
+You can help to improve Sphinxit by submitting `issues` and `pull requests`
+on `Github project page <https://github.com/semirook/sphinxit>`_.
 
-You can grab `latest code from Github <https://github.com/semirook/sphinxit>`_. Feel free to submit issues and pull requests.
 
-Contact
--------
+Contacts
+--------
 
-If you have some private proposals or specific questions,
+If you have some private proposals or questions,
 find me in `Twitter <https://twitter.com/semirook>`_ or `Facebook <http://www.facebook.com/semirook>`_.

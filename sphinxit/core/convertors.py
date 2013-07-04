@@ -1,6 +1,6 @@
 """
-    sphinxit.search
-    ~~~~~~~~~~~~~~~
+    sphinxit.core.convertors
+    ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Implements convertors and cleaners processors.
 
@@ -358,6 +358,8 @@ class OptionsCtx(CtxMixin):
             'proximity',
             'matchany',
             'fieldmask',
+            'sph04',
+            'expr',
         )
         if not ranker in valid_rankers:
             return self.__exit__(

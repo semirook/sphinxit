@@ -1,10 +1,10 @@
 """
-    sphinxit.exceptions
-    ~~~~~~~~~~~~~~~~~~~
+    sphinxit.core.exceptions
+    ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Implements Sphinxit typical exceptions.
 
-    :copyright: (c) 2012 by Roman Semirook.
+    :copyright: (c) 2013 by Roman Semirook.
     :license: BSD, see LICENSE for more details.
 """
 

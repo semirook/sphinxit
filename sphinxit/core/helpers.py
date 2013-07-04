@@ -1,3 +1,13 @@
+"""
+    sphinxit.core.helpers
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Implements useful set of helpers.
+
+    :copyright: (c) 2013 by Roman Semirook.
+    :license: BSD, see LICENSE for more details.
+"""
+
 from __future__ import unicode_literals
 
 import time
@@ -55,3 +65,19 @@ def sparse_free_sequence(sequence):
 
 def unix_timestamp(datetime):
     return str(int(time.mktime(datetime.timetuple())))
+
+
+class BaseSearchConfig(object):
+    DEBUG = True
+    WITH_META = True
+    WITH_STATUS = True
+    POOL_SIZE = 5
+    SEARCHD_CONNECTION = {
+        'host': '127.0.0.1',
+        'port': 9306,
+    }
+    # For future usage
+    SNIPPETS_DEFAULTS = {
+        'before_match': '<strong>',
+        'after_match': '</strong>',
+    }

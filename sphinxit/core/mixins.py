@@ -1,10 +1,10 @@
 """
-    sphinxit.search
-    ~~~~~~~~~~~~~~~
+    sphinxit.core.mixins
+    ~~~~~~~~~~~~~~~~~~~~
 
     Implements mixins for nodes and processor.
 
-    :copyright: (c) 2012 by Roman Semirook.
+    :copyright: (c) 2013 by Roman Semirook.
     :license: BSD, see LICENSE for more details.
 """
 

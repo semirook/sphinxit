@@ -1,10 +1,10 @@
 """
-    sphinxit.search
-    ~~~~~~~~~~~~~~~
+    sphinxit.core.nodes
+    ~~~~~~~~~~~~~~~~~~~
 
     Implements atomic nodes and containers of lexemes.
 
-    :copyright: (c) 2012 by Roman Semirook.
+    :copyright: (c) 2013 by Roman Semirook.
     :license: BSD, see LICENSE for more details.
 """
 
@@ -80,7 +80,7 @@ class SelectFromContainer(ConfigMixin):
             raise SphinxQLSyntaxException('No indexes defined to search with')
 
         lex = self._template.format(
-            fields=self._joiner.join(self.fields + self.or_fields) or '*',
+            fields=self._joiner.join((self.fields or ['*']) + self.or_fields),
             indexes=self._joiner.join(self.indexes),
         )
         return lex
@@ -94,7 +94,7 @@ class FiltersContainer(ConfigMixin):
     def __init__(self):
         super(FiltersContainer, self).__init__()
         self.query = []
-        self.conditions = deque([])
+        self.conditions = []
 
     def __bool__(self):
         return bool(self.conditions or self.query)
@@ -351,7 +351,7 @@ class OR(ConfigMixin):
         self.children = []
         self.joiner = None
 
-    def __join(self, or_inst, joiner, wrapper='{or_lex}'):
+    def __join(self, or_inst, joiner):
         or_ = OR()
         or_.children.extend([self, or_inst])
         or_.joiner = joiner

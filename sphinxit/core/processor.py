@@ -1,18 +1,20 @@
 """
-    sphinxit.search
-    ~~~~~~~~~~~~~~~
+    sphinxit.core.processor
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
     Implements SphinxQL expression processing.
 
-    :copyright: (c) 2012 by Roman Semirook.
+    :copyright: (c) 2013 by Roman Semirook.
     :license: BSD, see LICENSE for more details.
 """
 
 from __future__ import unicode_literals
+
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
 from copy import deepcopy
 
 import six
@@ -184,7 +186,7 @@ class Search(ConfigMixin):
     def __init__(self, indexes, config, connector=None):
         super(Search, self).__init__()
         self._nodes = LazySelectTree(indexes=indexes).with_config(config)
-        self.indexes = indexes
+        self.indexes = indexes  # TODO: add check it's iterable
         self.config = config
         self.connector = connector or SphinxConnector(config)
 
@@ -229,7 +231,7 @@ class Search(ConfigMixin):
             for cond in args:
                 if isinstance(cond, OR):
                     self._nodes.SelectFrom.add_or(cond)
-                    self._nodes.Where.add_condition('cnd__gte', 0)
+                    self._nodes.Where.add_condition('cnd__gt', 0)
         if kwargs:
             self._nodes.Where.add_conditions(**kwargs)
 
@@ -260,6 +262,11 @@ class Search(ConfigMixin):
         self._nodes.Options.set_options(**kwargs)
         return self
 
+    @copy_tree
+    def named(self, name):
+        self._name = name
+        return self
+
     def lex(self):
         if self._nodes.is_update():
             actual_nodes = self._nodes.get_update_nodes()
@@ -270,8 +277,14 @@ class Search(ConfigMixin):
             x.lex() for x in sparse_free_sequence(actual_nodes)
         ])
 
-    def ask(self, with_meta=False, with_status=False):
-        return self.connector.execute(sxql_query=self.lex())
+    def ask(self, subqueries=None):
+        query_batch = [(self.lex(), getattr(self, '_name', 'result'))]
+        if subqueries is not None:
+            query_batch.extend([
+                (s_inst.lex(), getattr(s_inst, '_name', 'result_%s' % id(s_inst)))
+                for s_inst in subqueries
+            ])
+        return self.connector.execute(query_batch)
 
 
 class Snippet(ConfigMixin):
@@ -299,7 +312,4 @@ class Snippet(ConfigMixin):
         return self._snippets_tree.lex()
 
     def ask(self):
-        return self.connector.execute(
-            sxql_query=self.lex(),
-            no_extra=True,
-        )
+        return self.connector.execute(self.lex())

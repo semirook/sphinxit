@@ -1,3 +1,13 @@
+"""
+    sphinxit.core.constants
+    ~~~~~~~~~~~~~~~~~~~~~~~
+
+    Defines some Sphinx-specific constants.
+
+    :copyright: (c) 2013 by Roman Semirook.
+    :license: BSD, see LICENSE for more details.
+"""
+
 from collections import namedtuple
 
 

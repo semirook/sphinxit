@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sphinxit',
-    version='0.3',
+    version='0.3.1',
     author='Roman Semirook',
     author_email='semirook@gmail.com',
     packages=find_packages(),
@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "six >= 1.1.0",
         "oursql >= 0.9.3",
+        "ordereddict >= 1.1",
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

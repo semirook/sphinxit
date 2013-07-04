@@ -3,18 +3,21 @@
 Installation
 ============
 
-So, you want to try **Sphinxit**? Good! Installation is simple as always with ``pip``::
+So, you want to try **Sphinxit**? Great! Installation is simple as usual with ``pip``::
 
     $ pip install sphinxit
 
-
-Do it in your project`s virtualenv... you know. Or, you can grab 
-`latest code from Github <https://github.com/semirook/sphinxit>`_. Just::
+Or you can grab the `latest codebase from Github <https://github.com/semirook/sphinxit>`_. Just::
 
     $ pip install -e git+https://github.com/semirook/sphinxit#egg=sphinxit
 
+If you prefer this way of package managing, you have to install some dependencies too. 
+You can find full list of them in the `reqs.pip` file::
 
-The only dependencies of Sphinxit are ``oursql`` (MySQL layer) and ``six`` (Python 2 and 3 compatibility layer)
-libraries. And, of course, SphinxSearch itself.
+    $ pip install -r reqs.pip
 
-What`s next? Visit :ref:`quickstart` to learn more.
+to complete manual installation. The only Sphinxit dependencies are:
+
+* ``oursql`` (MySQL client);
+* ``six`` (Python 2 and 3 compatibility layer);
+* ``ordereddict`` if you're stuck with Python 2.6.
