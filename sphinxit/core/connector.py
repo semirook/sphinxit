@@ -134,6 +134,7 @@ class SphinxConnector(ConfigMixin):
     def execute(self, sxql_query):
         connection = self.get_connection()
         cursor = self.get_cursor(connection)
+        total_results = {}
         try:
             if isinstance(sxql_query, (tuple, list)):
                 total_results = self._execute_batch(cursor, sxql_query)
@@ -142,8 +143,10 @@ class SphinxConnector(ConfigMixin):
         except Exception as e:
             if oursql and type(e).__name__ == 'ProgrammingError':
                 errno, msg, extra = e
-                raise SphinxQLDriverException(msg)
-            raise SphinxQLDriverException(e)
+                if errno is not None:
+                    raise SphinxQLDriverException(msg)
+            else:
+                raise SphinxQLDriverException(e)
         finally:
             cursor.close()
             self.__connections_pool.appendleft(connection)
