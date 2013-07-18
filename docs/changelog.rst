@@ -3,6 +3,10 @@
 Changelog
 =========
 
+Version 0.3.2 (2013-07-18)
+--------------------------
+* Fixed issue #11 with ``oursql`` exceptions on empty results 
+
 Version 0.3.1 (2013-07-05)
 --------------------------
 
