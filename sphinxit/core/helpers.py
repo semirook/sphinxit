@@ -72,6 +72,7 @@ class BaseSearchConfig(object):
     WITH_META = True
     WITH_STATUS = True
     POOL_SIZE = 5
+    SQL_ENGINE = 'oursql'
     SEARCHD_CONNECTION = {
         'host': '127.0.0.1',
         'port': 9306,
