@@ -105,13 +105,11 @@ class SphinxConnector(ConfigMixin):
     def _normalize_meta(self, raw_result):
         return dict([(x['Variable_name'], x['Value']) for x in raw_result])
 
+    def _normalize_status(self, raw_result):
+        return dict([(x['Counter'], x['Value']) for x in raw_result])
+
     def _execute_batch(self, cursor, sxql_batch):
         total_results = {}
-        extra = []
-        if getattr(self.config, 'WITH_META', False):
-            extra.append(('SHOW META', 'meta'))
-        if getattr(self.config, 'WITH_STATUS', False):
-            extra.append(('SHOW STATUS', 'status'))
 
         cursor_exec = self._get_cursor_exec(cursor)
 
@@ -121,10 +119,15 @@ class SphinxConnector(ConfigMixin):
             cursor_exec(sub_ql)
             subresult['items'] = [r for r in cursor]
 
-            for sub_meta_pair in extra:
-                meta_ql, meta_alias = sub_meta_pair
+            if getattr(self.config, 'WITH_META', False):
+                meta_ql, meta_alias = 'SHOW META', 'meta'
                 cursor_exec(meta_ql)
                 subresult[meta_alias] = self._normalize_meta(cursor)
+
+            if getattr(self.config, 'WITH_STATUS', False):
+                status_ql, status_alias = 'SHOW STATUS', 'status'
+                cursor_exec(status_ql)
+                subresult[status_alias] = self._normalize_status(cursor)
 
             total_results[sub_alias] = subresult
 
