@@ -23,6 +23,7 @@ First of all - create Sphinxit config class::
         WITH_META = True
         WITH_STATUS = True
         POOL_SIZE = 5
+        SQL_ENGINE = 'oursql'
         SEARCHD_CONNECTION = {
             'host': '127.0.0.1',
             'port': 9306,
@@ -48,6 +49,8 @@ will be ignored. Sphinxit will try to complete the query correctly, without brok
 
 :attr:`WITH_META` sets to return some useful stats (`SHOW META <http://sphinxsearch.com/docs/current.html#sphinxql-show-meta>`_ subquery)
 with your search results. If you don't care - turn it off, set to False.
+
+The :attr:`SQL_ENGINE` allow you to select engine for sql client. Supported options: 'oursql' (default) and 'mysqldb'.
 
 The :attr:`SEARCHD_CONNECTION` attribute sets connection settings for the Sphinx's ``searchd`` daemon. 
 Change the host and port values if they differ from defaults, check your ``sphinx.conf``.
