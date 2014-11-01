@@ -159,7 +159,7 @@ class OrderByContainer(ConfigMixin):
 
     def __init__(self):
         super(OrderByContainer, self).__init__()
-        self.orderings = set()
+        self.orderings = []
 
     def __bool__(self):
         return bool(self.orderings)
@@ -167,7 +167,7 @@ class OrderByContainer(ConfigMixin):
     def by_field(self, field, direction='ASC'):
         with OrderCtx(field, direction).with_config(self.config) as lex:
             if lex and lex not in self.orderings:
-                self.orderings.add(lex)
+                self.orderings.append(lex)
 
     def lex(self):
         if self:
