@@ -3,6 +3,9 @@ Meet Sphinxit!
 
 .. image:: https://secure.travis-ci.org/semirook/sphinxit.png?branch=master
 
+**I don't support this product any more. If you need some fixes or new features - fork and play with that, please.
+Snaql with native SphinxQL are recommended now.**
+
 **Sphinxit** is light and powerful **SphinxQL** query constructor. More, it is the set of helpers
 to make search with `Sphinx <http://sphinxsearch.com/>`_ easy to use in any kind of Python projects 
 like Django, Flask and others. Sphinxit is independent Python library and you are free to use it 
